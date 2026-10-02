@@ -13,7 +13,7 @@ The source images are git-ignored. Only the extracted colors are published.
 
 ## Logo
 
-The mark is nested chevron bands with the outlined "Cores" wordmark, defined in `src/lib/logo.ts`. `logoRamp()` turns any palette into a dark-to-light ramp, one color per band. On the home page `src/components/Logo.astro` starts in monochrome and then moves through every palette in the collection, linking to the one on show. `src/pages/logo.svg.ts` builds a standalone `/logo.svg` that animates through eight palettes on its own, for use outside the site.
+The mark is nested chevron bands on an iOS-style squircle with the outlined "Cores" wordmark, defined in `src/lib/logo.ts`. `logoRamp()` turns any palette into a dark-to-light ramp, one color per band. On the home page `src/components/Logo.astro` starts in monochrome and then moves through every palette in the collection, linking to the one on show. `src/pages/logo.svg.ts` builds a standalone `/logo.svg` that animates through eight palettes on its own, for use outside the site.
 
 ## Commands
 

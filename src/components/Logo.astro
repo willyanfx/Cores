@@ -1,5 +1,5 @@
 ---
-import { BANDS, MONO, RADIUS, SIZE, WORDMARK, logoRamp, type LogoRamp } from '../lib/logo';
+import { BANDS, MONO, SHAPE, SIZE, WORDMARK, logoRamp, type LogoRamp } from '../lib/logo';
 import { getPalettes, href } from '../lib/palettes';
 
 interface Props {
@@ -23,7 +23,7 @@ const clip = `logo-clip-${Math.random().toString(36).slice(2, 8)}`;
 <div class:list={['logo', className]} data-logo data-ramps={JSON.stringify(ramps)}>
   <svg viewBox={`0 0 ${SIZE} ${SIZE}`} aria-hidden="true">
     <defs>
-      <clipPath id={clip}><rect width={SIZE} height={SIZE} rx={RADIUS} /></clipPath>
+      <clipPath id={clip}><path d={SHAPE} /></clipPath>
     </defs>
     <g clip-path={`url(#${clip})`}>
       <rect class="tone" width={SIZE} height={SIZE} style={`fill:${MONO.ground};--i:${BANDS.length}`} />

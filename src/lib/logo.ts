@@ -2,13 +2,28 @@ import { contrast, oklch } from './color';
 
 /**
  * The Cores mark: nested diamonds centred on the middle of the right edge,
- * drawn on a 100×100 rounded square, with the wordmark set bottom-left.
+ * drawn on a 100×100 squircle, with the wordmark set bottom-left.
  * Each band takes one step of a dark-to-light ramp built from a palette.
  */
 
 export const SIZE = 100;
-export const RADIUS = 8;
 export const BAND_COUNT = 12;
+
+/**
+ * Outline of the mark: a superellipse (n = 5), the continuous-corner
+ * "squircle" of iOS and macOS app icons, rather than a circular-arc corner.
+ */
+export const SHAPE = (() => {
+  const n = 5;
+  const c = SIZE / 2;
+  const steps = 160;
+  const curve = (v: number) => Math.sign(v) * Math.abs(v) ** (2 / n);
+  const points = Array.from({ length: steps }, (_, i) => {
+    const t = (i / steps) * 2 * Math.PI;
+    return `${+(c + c * curve(Math.cos(t))).toFixed(2)} ${+(c + c * curve(Math.sin(t))).toFixed(2)}`;
+  });
+  return `M${points.join('L')}Z`;
+})();
 
 const OUTER = 95;
 const INNER = 11.5;
