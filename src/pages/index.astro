@@ -61,16 +61,16 @@ const hasBrand = infos.some((i) => i.palette.data.origin === 'brand');
         {
           ramps.map((r, i) => (
             <a
-              class:list={['ramp', { on: i === start }]}
+              class="ramp"
               href={r.url}
               tabindex="-1"
-              style={`--n:${r.colors.length};--accent:${r.accent}`}
+              style={`--accent:${r.accent}`}
               data-title={r.title}
               data-contrast={r.contrast}
             >
               {r.colors.map((c, j) => (
                 <span
-                  class="chip"
+                  class:list={['chip', { on: i === start && j === Math.floor(r.colors.length / 2) }]}
                   style={`--c:${c.hex};--on:${inkOn(c.hex)};--d:${Math.min(Math.abs(i - start), 14) * 40 + j * 15}ms`}
                 >
                   <b class="l">{Math.round(c.l * 100)}</b>
@@ -158,64 +158,61 @@ const hasBrand = infos.some((i) => i.palette.data.origin === 'brand');
 </Base>
 
 <script>
-  // Ramp stage: one palette at a time opens into labeled tiles while the row glides to center it.
+  // Ramp stage: one chip at a time opens into a labeled tile while the row glides to center it.
   const stage = document.getElementById('stage')!;
   const row = stage.querySelector<HTMLElement>('.row')!;
   const bracket = stage.querySelector<HTMLElement>('.bracket')!;
   const caption = bracket.querySelector('span')!;
-  const ramps = [...row.querySelectorAll<HTMLElement>('.ramp')];
+  const chips = [...row.querySelectorAll<HTMLElement>('.chip')];
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  let current = Math.max(0, ramps.findIndex((r) => r.classList.contains('on')));
+  let current = Math.max(0, chips.findIndex((c) => c.classList.contains('on')));
   let tx = 0;
-  // Settled geometry with every ramp closed, plus each chip count's open width.
+  // Settled geometry with every chip closed, plus how much one chip grows when it opens.
   let lefts: number[] = [];
-  let widths: number[] = [];
-  const openWidth = new Map<number, number>();
+  let size = 0;
+  let growth = 0;
   let rowWidth = 0;
   let stageWidth = 0;
 
-  const opened = (i: number) => openWidth.get(ramps[i].childElementCount)!;
-  const growth = (i: number) => opened(i) - widths[i];
+  const rampOf = (i: number) => chips[i].parentElement!;
 
   function centered(i: number) {
-    const x = stageWidth / 2 - (lefts[i] + opened(i) / 2);
-    return Math.min(0, Math.max(x, stageWidth - rowWidth - growth(i)));
+    const x = stageWidth / 2 - (lefts[i] + (size + growth) / 2);
+    return Math.min(0, Math.max(x, stageWidth - rowWidth - growth));
   }
 
   function feature(i: number, x: number) {
+    const ramp = rampOf(i);
     if (i !== current) {
-      ramps[current].classList.remove('on');
-      ramps[i].classList.add('on');
-      const { title, contrast } = ramps[i].dataset;
-      caption.innerHTML = '';
-      caption.append(Object.assign(document.createElement('b'), { textContent: title }), ` Contrast ${contrast}`);
-      if (!reduce) caption.animate({ opacity: [0, 1] }, { duration: 300, delay: 250, fill: 'backwards' });
+      if (ramp !== rampOf(current)) {
+        const { title, contrast } = ramp.dataset;
+        caption.innerHTML = '';
+        caption.append(Object.assign(document.createElement('b'), { textContent: title }), ` Contrast ${contrast}`);
+        if (!reduce) caption.animate({ opacity: [0, 1] }, { duration: 300, delay: 250, fill: 'backwards' });
+      }
+      chips[current].classList.remove('on');
+      chips[i].classList.add('on');
     }
     current = i;
     tx = x;
+    const first = chips.indexOf(ramp.firstElementChild as HTMLElement);
+    const last = first + ramp.childElementCount - 1;
     row.style.transform = `translateX(${x}px)`;
-    bracket.style.setProperty('--x', `${lefts[i] + x}px`);
-    bracket.style.setProperty('--w', `${opened(i)}px`);
-    bracket.style.setProperty('--accent', ramps[i].style.getPropertyValue('--accent'));
+    bracket.style.setProperty('--x', `${lefts[first] + x}px`);
+    bracket.style.setProperty('--w', `${lefts[last] - lefts[first] + size + growth}px`);
+    bracket.style.setProperty('--accent', ramp.style.getPropertyValue('--accent'));
   }
 
   function measure() {
     stage.classList.add('measure');
-    ramps[current].classList.remove('on');
-    lefts = ramps.map((r) => r.offsetLeft);
-    widths = ramps.map((r) => r.offsetWidth);
+    chips[current].classList.remove('on');
+    lefts = chips.map((c) => c.offsetLeft);
     rowWidth = row.offsetWidth;
     stageWidth = stage.clientWidth;
-    openWidth.clear();
-    for (const r of ramps) {
-      const n = r.childElementCount;
-      if (openWidth.has(n)) continue;
-      r.classList.add('on');
-      openWidth.set(n, r.offsetWidth);
-      r.classList.remove('on');
-    }
-    ramps[current].classList.add('on');
+    size = chips[current].offsetWidth;
+    chips[current].classList.add('on');
+    growth = chips[current].offsetWidth - size;
     feature(current, centered(current));
     void row.offsetWidth;
     stage.classList.remove('measure');
@@ -224,26 +221,26 @@ const hasBrand = infos.some((i) => i.palette.data.origin === 'brand');
   let timer: number | undefined;
   let hovering = false;
   let inView = true;
-  function schedule(delay = 2800) {
+  function schedule(delay = 2000) {
     clearTimeout(timer);
     if (reduce || hovering || !inView || document.hidden) return;
     timer = window.setTimeout(() => {
-      const next = (current + 1) % ramps.length;
+      const next = (current + 1) % chips.length;
       feature(next, centered(next));
       schedule();
     }, delay);
   }
 
-  // Open the ramp under the pointer in place, keeping its left edge still so it stays under the cursor,
+  // Open the chip under the pointer in place, keeping its left edge still so it stays under the cursor,
   // nudged only as far as needed to keep it clear of the faded edges.
   row.addEventListener('pointerover', (e) => {
     if (e.pointerType !== 'mouse') return;
-    const r = (e.target as HTMLElement).closest<HTMLElement>('.ramp');
-    const i = r ? ramps.indexOf(r) : -1;
+    const c = (e.target as HTMLElement).closest<HTMLElement>('.chip');
+    const i = c ? chips.indexOf(c) : -1;
     if (i < 0 || i === current) return;
     const pad = stageWidth * 0.05;
-    const x = tx + (current < i ? growth(current) : 0);
-    feature(i, Math.max(pad - lefts[i], Math.min(x, stageWidth - pad - lefts[i] - opened(i))));
+    const x = tx + (current < i ? growth : 0);
+    feature(i, Math.max(pad - lefts[i], Math.min(x, stageWidth - pad - lefts[i] - size - growth)));
   });
   stage.addEventListener('pointerenter', (e) => {
     if (e.pointerType !== 'mouse') return;
@@ -357,14 +354,7 @@ const hasBrand = infos.some((i) => i.palette.data.origin === 'brand');
 
 
 
-  /* Stage: every palette as a ramp of chips, one opened at a time */
-  /* Registered so --w resolves against the stage, not the chip it is used inside. */
-  @property --w {
-    syntax: '<length>';
-    inherits: true;
-    initial-value: 0px;
-  }
-
+  /* Stage: every palette as a ramp of chips, one chip opened at a time */
   .stage {
     --chip: clamp(1.75rem, 3.2vw, 3.25rem);
     --big: calc(var(--chip) * 2.8);
@@ -392,8 +382,6 @@ const hasBrand = infos.some((i) => i.palette.data.origin === 'brand');
   }
 
   .ramp {
-    /* Open tiles shrink to fit narrow screens, capped at --big. */
-    --w: min(var(--big), (100cqw - 2 * var(--gutter) - (var(--n) - 1) * var(--gap)) / var(--n));
     display: flex;
     align-items: flex-end;
     gap: var(--gap);
@@ -424,8 +412,8 @@ const hasBrand = infos.some((i) => i.palette.data.origin === 'brand');
     animation-delay: var(--d);
   }
 
-  .on .chip {
-    width: var(--w);
+  .chip.on {
+    width: var(--big);
     height: var(--big);
   }
 
@@ -444,7 +432,7 @@ const hasBrand = infos.some((i) => i.palette.data.origin === 'brand');
 
   .name {
     /* Sized to the open tile so the growing chip reveals it instead of rewrapping it. */
-    width: calc(var(--w) - 1.1em);
+    width: calc(var(--big) - 1.1em);
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
