@@ -1,0 +1,115 @@
+---
+import { BANDS, MONO, SHAPE, SIZE, WORDMARK, logoRamp, type LogoRamp } from '../lib/logo';
+import { getPalettes, href } from '../lib/palettes';
+
+interface Props {
+  class?: string;
+}
+
+const { class: className } = Astro.props;
+
+// Fills in document order: ground, bands, wordmark.
+const fills = ({ ground, bands, ink }: LogoRamp) => [ground, ...bands, ink];
+
+// Every palette the mark can wear, as [title, url, fills].
+const ramps = (await getPalettes()).map(({ palette }) => [
+  palette.data.title,
+  href(palette.id),
+  fills(logoRamp(palette.data.colors.map((c) => c.hex))),
+]);
+const clip = `logo-clip-${Math.random().toString(36).slice(2, 8)}`;
+---
+
+<div class:list={['logo', className]} data-logo data-ramps={JSON.stringify(ramps)}>
+  <svg viewBox={`0 0 ${SIZE} ${SIZE}`} aria-hidden="true">
+    <defs>
+      <clipPath id={clip}><path d={SHAPE} /></clipPath>
+    </defs>
+    <g clip-path={`url(#${clip})`}>
+      <rect class="tone" width={SIZE} height={SIZE} style={`fill:${MONO.ground};--i:${BANDS.length}`} />
+      {BANDS.map((points, i) => <polygon class="tone" points={points} style={`fill:${MONO.bands[i]};--i:${BANDS.length - 1 - i}`} />)}
+    </g>
+    <path class="tone" d={WORDMARK} style={`fill:${MONO.ink};--i:${BANDS.length}`} />
+  </svg>
+  <p class="credit">Colors from <a>Monochrome</a></p>
+</div>
+
+<script>
+  type Entry = [title: string, url: string, fills: string[]];
+
+  const HOLD = 3200;
+
+  for (const logo of document.querySelectorAll<HTMLElement>('[data-logo]')) {
+    const shapes = [...logo.querySelectorAll<SVGElement>('.tone')];
+    const link = logo.querySelector('a')!;
+    const entries: Entry[] = JSON.parse(logo.dataset.ramps!);
+    // Shuffle so each visit walks the collection in a new order.
+    for (let i = entries.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [entries[i], entries[j]] = [entries[j], entries[i]];
+    }
+
+    let next = 0;
+    let paused = false;
+    const show = () => {
+      const [title, url, fills] = entries[next++ % entries.length];
+      shapes.forEach((shape, i) => (shape.style.fill = fills[i]));
+      link.textContent = title;
+      link.href = url;
+    };
+
+    // Hold still while the pointer is on it, so the palette link can be followed.
+    logo.addEventListener('pointerenter', () => (paused = true));
+    logo.addEventListener('pointerleave', () => (paused = false));
+    logo.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('a')) return;
+      show();
+    });
+
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setInterval(() => !paused && !document.hidden && show(), HOLD);
+    }
+  }
+</script>
+
+<style>
+  .logo {
+    display: grid;
+    /* One track as wide as the logo, so the credit can't stretch the mark. */
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.6rem;
+    justify-items: start;
+  }
+
+  svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    cursor: pointer;
+  }
+
+  /* Colors ripple outward from the point of the chevrons. */
+  .tone {
+    transition: fill 900ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition-delay: calc(var(--i) * 45ms);
+  }
+
+  /* May run wider than the mark itself. */
+  .credit {
+    width: max-content;
+    max-width: calc(100vw - 2 * var(--gutter));
+    font-size: var(--step--1);
+    color: var(--muted);
+  }
+
+  .credit a {
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .credit a[href]:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+  }
+</style>

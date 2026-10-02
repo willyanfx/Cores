@@ -1,5 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
+import Logo from '../components/Logo.astro';
 import PaletteCard from '../components/PaletteCard.astro';
 import { HUES, contrast, hueFamily, inkOn, oklch } from '../lib/color';
 import { getPalettes, href } from '../lib/palettes';
@@ -51,7 +52,8 @@ const hasBrand = infos.some((i) => i.palette.data.origin === 'brand');
 
 <Base title="Cores">
   <header class="wrap masthead">
-    <h1>Cores</h1>
+    <h1 class="visually-hidden">Cores</h1>
+    <Logo class="mark" />
     <a class="daily" href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/today/`}>Color of the day</a>
   </header>
 
@@ -360,15 +362,9 @@ const hasBrand = infos.some((i) => i.palette.data.origin === 'brand');
     text-underline-offset: 3px;
   }
 
-  h1 {
-    font-size: var(--step-5);
-    font-weight: 800;
-    letter-spacing: -0.055em;
-    line-height: 0.82;
-    margin-left: -0.04em;
+  .masthead :global(.mark) {
+    width: clamp(7rem, 15vw, 10.5rem);
   }
-
-
 
   /* Stage: every palette as a ramp of chips, one chip opened at a time */
   .stage {
