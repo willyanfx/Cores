@@ -1,5 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
+import Logo from '../components/Logo.astro';
 import PaletteCard from '../components/PaletteCard.astro';
 import { HUES, hueFamily, oklch, spectrumKey } from '../lib/color';
 import { getPalettes, href } from '../lib/palettes';
@@ -41,7 +42,8 @@ const hasBrand = infos.some((i) => i.palette.data.origin === 'brand');
 
 <Base title="Cores">
   <header class="wrap masthead">
-    <h1>Cores</h1>
+    <h1 class="visually-hidden">Cores</h1>
+    <Logo class="mark" />
   </header>
 
   <section class="spectrum-block" aria-label="Every color in the collection, ordered by hue">
@@ -229,15 +231,9 @@ const hasBrand = infos.some((i) => i.palette.data.origin === 'brand');
     padding-block: clamp(2rem, 6vw, 4.5rem) clamp(1.5rem, 3vw, 2.5rem);
   }
 
-  h1 {
-    font-size: var(--step-5);
-    font-weight: 800;
-    letter-spacing: -0.055em;
-    line-height: 0.82;
-    margin-left: -0.04em;
+  .masthead :global(.mark) {
+    width: clamp(9rem, 22vw, 15rem);
   }
-
-
 
   /* Spectrum: the whole collection as one strip */
   .spectrum {

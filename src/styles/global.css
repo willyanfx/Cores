@@ -14,7 +14,6 @@
   --step-1: 1.25rem;
   --step-2: 1.5625rem;
   --step-3: 1.9375rem;
-  --step-5: clamp(3.5rem, 11vw, 9.5rem);
 
   --gutter: clamp(1rem, 3vw, 2.5rem);
   --max: 1440px;
