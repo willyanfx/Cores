@@ -1,0 +1,515 @@
+---
+import Base from '../layouts/Base.astro';
+import { inkOn } from '../lib/color';
+import { formatDay, needsEdge, pickForDate, POST, startOfDay, valueRows } from '../lib/daily';
+import { getDailyColors } from '../lib/palettes';
+
+const colors = await getDailyColors();
+// Rendered for the build date so the page reads without JavaScript; the script
+// below re-picks for the visitor's own date.
+const day = startOfDay(new Date());
+const color = pickForDate(colors, day);
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const site = `${new URL(Astro.site ?? 'http://localhost').host}${base}`;
+const { chip, name } = POST;
+---
+
+<Base title="Color of the day · Cores" description="One color from the collection each day, with its values and a card to share.">
+  <link
+    slot="head"
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&display=swap"
+  />
+
+  <nav class="wrap top">
+    <a href={`${base}/`}>Cores</a>
+    <span>Color of the day</span>
+  </nav>
+
+  <main class="wrap today">
+    <figure class="post" id="post" role="img" aria-label={`${color.name}, ${color.hex}`}>
+      <div class="frame" aria-hidden="true">
+        <p class="brand"><b>Cores</b><span>{site}</span></p>
+        <svg class="mark" viewBox="0 0 32 32">
+          <rect width="8" height="32" fill="#E9AD17" /><rect x="8" width="8" height="32" fill="#C53D43" /><rect
+            x="16"
+            width="8"
+            height="32"
+            fill="#1B6F81"
+          /><rect x="24" width="8" height="32" fill="#204242" />
+        </svg>
+        <div
+          class:list={['chip', { edge: needsEdge(color.hex) }]}
+          id="chip"
+          style={`--c:${color.hex};--on:${inkOn(color.hex)};--name:${name.max}`}
+        >
+          <p class="name" id="post-name">{color.name}</p>
+          <dl class="values" id="post-values">
+            {
+              valueRows(color.hex).map(([k, v]) => (
+                <div>
+                  <dt>{k}</dt>
+                  <dd>{v}</dd>
+                </div>
+              ))
+            }
+          </dl>
+        </div>
+        <p class="stamp" id="post-date">COLOR OF THE DAY — {formatDay(day)}</p>
+      </div>
+    </figure>
+
+    <aside class="side">
+      <p class="when" id="when">Today</p>
+      <h1 id="name">{color.name}</h1>
+      <p class="from">From <a id="from" href={color.url}>{color.palette}</a></p>
+
+      <div class="copies" id="copies" aria-label="Copy a value">
+        <button type="button" data-format="hex">HEX</button>
+        <button type="button" data-format="rgb">RGB</button>
+        <button type="button" data-format="hsl">HSL</button>
+        <button type="button" data-format="oklch">OKLCH</button>
+      </div>
+
+      <button type="button" class="download" id="download">Download image</button>
+      <p class="note">1080 × 1080 PNG, ready to post.</p>
+
+      <section class="days">
+        <h2>Past week</h2>
+        <ol id="days"></ol>
+      </section>
+    </aside>
+  </main>
+
+  <script id="daily-data" type="application/json" set:html={JSON.stringify({ colors, site })} />
+</Base>
+
+<script>
+  import { formatOklch, formatRgb, hsl, inkOn } from '../lib/color';
+  import {
+    MONO,
+    POST,
+    SANS,
+    addDays,
+    dayKey,
+    drawPost,
+    fitName,
+    formatDay,
+    needsEdge,
+    parseDay,
+    pickForDate,
+    startOfDay,
+    valueRows,
+    type DailyColor,
+  } from '../lib/daily';
+
+  const { colors, site } = JSON.parse(document.getElementById('daily-data')!.textContent!) as {
+    colors: DailyColor[];
+    site: string;
+  };
+  const $ = (id: string) => document.getElementById(id)!;
+
+  const today = startOfDay(new Date());
+  const asked = parseDay(new URLSearchParams(location.search).get('d'));
+  // Future days stay a surprise.
+  const day = asked && asked <= today ? asked : today;
+  const color = pickForDate(colors, day);
+
+  const fonts = Promise.all(
+    [`800 88px ${SANS}`, `700 26px ${SANS}`, `400 20px ${SANS}`, `400 24px ${MONO}`, `600 24px ${MONO}`].map((f) =>
+      document.fonts.load(f),
+    ),
+  );
+
+  function longDate(d: Date) {
+    const diff = Math.round((today.getTime() - d.getTime()) / 864e5);
+    if (diff === 0) return 'Today';
+    if (diff === 1) return 'Yesterday';
+    return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  }
+
+  function linkFor(d: Date) {
+    return d.getTime() === today.getTime() ? location.pathname : `?d=${dayKey(d)}`;
+  }
+
+  // Card
+  const chip = $('chip');
+  chip.style.setProperty('--c', color.hex);
+  chip.style.setProperty('--on', inkOn(color.hex));
+  chip.classList.toggle('edge', needsEdge(color.hex));
+  $('post').setAttribute('aria-label', `${color.name}, ${color.hex}`);
+  $('post-name').textContent = color.name;
+  $('post-values').replaceChildren(
+    ...valueRows(color.hex).map(([k, v]) => {
+      const row = document.createElement('div');
+      row.append(Object.assign(document.createElement('dt'), { textContent: k }));
+      row.append(Object.assign(document.createElement('dd'), { textContent: v }));
+      return row;
+    }),
+  );
+  $('post-date').textContent = `COLOR OF THE DAY — ${formatDay(day)}`;
+
+  // Same wrap and size as the exported image.
+  fonts.then(() => {
+    const ctx = document.createElement('canvas').getContext('2d')!;
+    ctx.font = `800 100px ${SANS}`;
+    const fit = fitName(color.name, (s) => ctx.measureText(s).width / 100);
+    chip.style.setProperty('--name', String(fit.size));
+    $('post-name').replaceChildren(...fit.lines.map((l) => Object.assign(document.createElement('span'), { textContent: l })));
+  });
+
+  // Side panel
+  $('when').textContent = longDate(day);
+  $('name').textContent = color.name;
+  const from = $('from') as HTMLAnchorElement;
+  from.textContent = color.palette;
+  from.href = color.url;
+  document.title = `${color.name} · Color of the day · Cores`;
+
+  const h = hsl(color.hex);
+  const formats: Record<string, string> = {
+    hex: color.hex,
+    rgb: formatRgb(color.hex),
+    hsl: `hsl(${Math.round(h.h)} ${Math.round(h.s)}% ${Math.round(h.l)}%)`,
+    oklch: formatOklch(color.hex),
+  };
+  $('copies')
+    .querySelectorAll<HTMLButtonElement>('button')
+    .forEach((b) => {
+      const value = formats[b.dataset.format!];
+      Object.assign(b.dataset, { copy: value, swatch: color.hex, label: value });
+      b.title = value;
+    });
+
+  // Past week, newest first
+  $('days').replaceChildren(
+    ...Array.from({ length: 7 }, (_, i) => {
+      const d = addDays(today, -i);
+      const c = pickForDate(colors, d);
+      const li = document.createElement('li');
+      const a = Object.assign(document.createElement('a'), { href: linkFor(d) });
+      if (d.getTime() === day.getTime()) a.setAttribute('aria-current', 'page');
+      const dot = document.createElement('i');
+      dot.style.background = c.hex;
+      const text = document.createElement('span');
+      text.append(Object.assign(document.createElement('b'), { textContent: c.name }));
+      text.append(Object.assign(document.createElement('small'), { textContent: longDate(d) }));
+      a.append(dot, text);
+      li.append(a);
+      return li;
+    }),
+  );
+
+  // Download
+  $('download').addEventListener('click', async () => {
+    await fonts;
+    const canvas = document.createElement('canvas');
+    drawPost(canvas, color, day, site);
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const slug = color.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      const a = Object.assign(document.createElement('a'), {
+        href: URL.createObjectURL(blob),
+        download: `color-of-the-day-${dayKey(day)}-${slug}.png`,
+      });
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }, 'image/png');
+  });
+</script>
+
+<style define:vars={{ u: `calc(100cqw / ${POST.size})`, 'post-ground': POST.ground, 'post-ink': POST.ink }}>
+  .top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-block: 1.25rem;
+    font-size: var(--step--1);
+  }
+
+  .top a {
+    text-decoration: none;
+    font-weight: 800;
+    font-size: var(--step-1);
+    letter-spacing: -0.04em;
+  }
+
+  .top span {
+    color: var(--muted);
+  }
+
+  .today {
+    display: grid;
+    grid-template-columns: minmax(0, 40rem) minmax(16rem, 22rem);
+    justify-content: center;
+    align-items: start;
+    gap: clamp(1.5rem, 4vw, 4rem);
+    padding-block: clamp(0.5rem, 3vw, 2.5rem) 5rem;
+  }
+
+  @media (max-width: 860px) {
+    .today {
+      grid-template-columns: minmax(0, 40rem);
+    }
+  }
+
+  /* The post. Every length is a pixel of the 1080 export times --u. */
+  .post {
+    margin: 0;
+    container-type: inline-size;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px var(--rule);
+  }
+
+  .frame {
+    position: relative;
+    aspect-ratio: 1;
+    background: var(--post-ground);
+    color: var(--post-ink);
+    font-family: var(--font);
+  }
+
+  .frame p {
+    margin: 0;
+  }
+
+  .brand,
+  .chip,
+  .stamp,
+  .mark {
+    position: absolute;
+  }
+
+  .brand {
+    top: calc(40 * var(--u));
+    left: calc(40 * var(--u));
+    display: grid;
+  }
+
+  .brand b,
+  .brand span {
+    line-height: 1;
+    text-box: trim-both cap alphabetic;
+  }
+
+  .brand b {
+    font-size: calc(26 * var(--u));
+    font-weight: 700;
+  }
+
+  .brand span {
+    margin-top: calc(14 * var(--u));
+    font-size: calc(20 * var(--u));
+  }
+
+  .mark {
+    top: calc(40 * var(--u));
+    right: calc(40 * var(--u));
+    width: calc(56 * var(--u));
+    height: calc(56 * var(--u));
+  }
+
+  .chip {
+    top: calc(250 * var(--u));
+    left: calc(250 * var(--u));
+    width: calc(580 * var(--u));
+    height: calc(580 * var(--u));
+    padding: calc(50 * var(--u));
+    background: var(--c);
+    color: var(--on);
+    transition: background 200ms ease;
+  }
+
+  .chip.edge {
+    box-shadow: inset 0 0 0 calc(2 * var(--u)) rgb(0 0 0 / 0.12);
+  }
+
+  .name {
+    display: grid;
+    font-size: calc(var(--name) * var(--u));
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 0.92;
+    text-box: trim-both cap alphabetic;
+  }
+
+  .name :global(span) {
+    line-height: 1;
+    text-box: trim-both cap alphabetic;
+  }
+
+  .name :global(span + span) {
+    margin-top: calc(0.92em - 1cap);
+  }
+
+  .values {
+    position: absolute;
+    left: calc(50 * var(--u));
+    bottom: calc(50 * var(--u));
+    margin: 0;
+    display: grid;
+    row-gap: calc(49 * var(--u) - 1cap);
+    font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+    font-size: calc(24 * var(--u));
+    white-space: pre;
+  }
+
+  .values :global(div) {
+    display: grid;
+    grid-template-columns: calc(106 * var(--u)) auto;
+  }
+
+  .values :global(dt),
+  .values :global(dd) {
+    margin: 0;
+    line-height: 1;
+    text-box: trim-both cap alphabetic;
+  }
+
+  .values :global(dt) {
+    font-weight: 600;
+  }
+
+  .stamp {
+    left: 0;
+    right: 0;
+    bottom: calc(39 * var(--u));
+    text-align: center;
+    font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+    font-size: calc(20 * var(--u));
+    letter-spacing: 0.06em;
+    line-height: 1;
+    text-box: trim-both cap alphabetic;
+  }
+
+  /* Side panel */
+  .side {
+    display: grid;
+    justify-items: start;
+    gap: 0.75rem;
+  }
+
+  .when {
+    font-size: var(--step--1);
+    color: var(--muted);
+  }
+
+  h1 {
+    font-size: clamp(2.25rem, 5vw, 3.5rem);
+    font-weight: 800;
+    letter-spacing: -0.045em;
+    line-height: 0.95;
+  }
+
+  .from {
+    color: var(--muted);
+  }
+
+  .from a {
+    color: var(--ink);
+    text-underline-offset: 3px;
+  }
+
+  .copies {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.75rem;
+  }
+
+  .copies button {
+    padding: 0.3rem 0.75rem;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    background: none;
+    font-size: var(--step--1);
+    font-weight: 500;
+    cursor: copy;
+  }
+
+  .copies button:hover {
+    border-color: var(--muted);
+  }
+
+  .download {
+    margin-top: 0.5rem;
+    padding: 0.7rem 1.2rem;
+    border: 0;
+    border-radius: 999px;
+    background: var(--ink);
+    color: var(--ground);
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .note {
+    margin-top: -0.25rem;
+    font-size: var(--step--1);
+    color: var(--muted);
+  }
+
+  .days {
+    width: 100%;
+    margin-top: 1.75rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--rule);
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  h2 {
+    font-size: var(--step--1);
+    font-weight: 500;
+    letter-spacing: 0;
+    color: var(--muted);
+  }
+
+  .days ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+  }
+
+  .days :global(a) {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.4rem 0.5rem;
+    margin-inline: -0.5rem;
+    border-radius: 6px;
+    text-decoration: none;
+  }
+
+  .days :global(a:hover) {
+    background: var(--raised);
+  }
+
+  .days :global(a[aria-current]) {
+    background: var(--raised);
+    box-shadow: inset 0 0 0 1px var(--rule);
+  }
+
+  .days :global(i) {
+    flex: none;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 4px;
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.08);
+  }
+
+  .days :global(span) {
+    display: grid;
+    line-height: 1.25;
+  }
+
+  .days :global(b) {
+    font-weight: 500;
+  }
+
+  .days :global(small) {
+    font-size: var(--step--1);
+    color: var(--muted);
+  }
+</style>
