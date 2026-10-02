@@ -10,16 +10,15 @@ const allHexes = [...new Set(infos.flatMap(({ palette }) => palette.data.colors.
 // Every palette as a light-to-dark ramp of chips, walked around the hue wheel.
 const ramps = [...infos]
   .sort((a, b) => a.leadHue - b.leadHue)
-  .map(({ palette }) => {
+  .map(({ palette, lead }) => {
     const colors = [...new Map(palette.data.colors.map((c) => [c.hex, c])).values()]
       .map((c) => ({ ...c, l: oklch(c.hex).l }))
       .sort((a, b) => b.l - a.l);
-    const lead = [...colors].sort((a, b) => oklch(b.hex).c - oklch(a.hex).c)[0];
     const ratio = contrast(colors[0].hex, colors[colors.length - 1].hex);
     return {
       title: palette.data.title,
       url: href(palette.id),
-      accent: lead.hex,
+      accent: lead,
       contrast: `${ratio >= 10 ? Math.round(ratio) : ratio.toFixed(1)}:1`,
       colors,
     };
@@ -164,6 +163,9 @@ const hasBrand = infos.some((i) => i.palette.data.origin === 'brand');
   const bracket = stage.querySelector<HTMLElement>('.bracket')!;
   const caption = bracket.querySelector('span')!;
   const chips = [...row.querySelectorAll<HTMLElement>('.chip')];
+  const indexOf = new Map(chips.map((c, i) => [c, i]));
+  // Index of the first chip in each chip's ramp.
+  const firstOf = chips.map((c) => indexOf.get(c.parentElement!.firstElementChild as HTMLElement)!);
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   let current = Math.max(0, chips.findIndex((c) => c.classList.contains('on')));
@@ -196,7 +198,7 @@ const hasBrand = infos.some((i) => i.palette.data.origin === 'brand');
     }
     current = i;
     tx = x;
-    const first = chips.indexOf(ramp.firstElementChild as HTMLElement);
+    const first = firstOf[i];
     const last = first + ramp.childElementCount - 1;
     row.style.transform = `translateX(${x}px)`;
     bracket.style.setProperty('--x', `${lefts[first] + x}px`);
@@ -232,15 +234,18 @@ const hasBrand = infos.some((i) => i.palette.data.origin === 'brand');
   }
 
   // Open the chip under the pointer in place, keeping its left edge still so it stays under the cursor,
-  // nudged only as far as needed to keep it clear of the faded edges.
+  // nudged toward the middle when it would open into the faded edges.
   row.addEventListener('pointerover', (e) => {
     if (e.pointerType !== 'mouse') return;
     const c = (e.target as HTMLElement).closest<HTMLElement>('.chip');
-    const i = c ? chips.indexOf(c) : -1;
+    const i = c ? indexOf.get(c)! : -1;
     if (i < 0 || i === current) return;
     const pad = stageWidth * 0.05;
-    const x = tx + (current < i ? growth : 0);
-    feature(i, Math.max(pad - lefts[i], Math.min(x, stageWidth - pad - lefts[i] - size - growth)));
+    const anchored = tx + (current < i ? growth : 0);
+    const nudged = Math.max(pad - lefts[i], Math.min(anchored, stageWidth - pad - lefts[i] - size - growth));
+    // Never nudge the tile out from under the cursor, or the next chip would open and the row would march.
+    const px = e.clientX - stage.getBoundingClientRect().left - lefts[i];
+    feature(i, Math.min(px - 2, Math.max(nudged, px + 2 - size - growth)));
   });
   stage.addEventListener('pointerenter', (e) => {
     if (e.pointerType !== 'mouse') return;
@@ -363,7 +368,6 @@ const hasBrand = infos.some((i) => i.palette.data.origin === 'brand');
     --dur: 750ms;
     position: relative;
     overflow: hidden;
-    container-type: inline-size;
     padding-block: clamp(1rem, 3vw, 2rem) 3.25rem;
     mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
   }
@@ -437,15 +441,12 @@ const hasBrand = infos.some((i) => i.palette.data.origin === 'brand');
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     overflow: hidden;
+    opacity: 0;
   }
 
   .hex {
     bottom: 0.5em;
     font-size: 0.85em;
-    opacity: 0;
-  }
-
-  .name {
     opacity: 0;
   }
 

@@ -6,6 +6,8 @@ export type Palette = CollectionEntry<'palettes'>;
 export interface PaletteInfo {
   palette: Palette;
   hues: Hue[];
+  /** Most chromatic color. */
+  lead: string;
   /** Hue of the most chromatic color, used for "by hue" ordering. */
   leadHue: number;
   lightness: number;
@@ -19,6 +21,7 @@ export async function getPalettes(): Promise<PaletteInfo[]> {
     return {
       palette,
       hues: [...new Set(hexes.map(hueFamily))],
+      lead,
       leadHue: spectrumKey(lead),
       lightness: hexes.reduce((s, h) => s + oklch(h).l, 0) / hexes.length,
     };
