@@ -1,0 +1,487 @@
+[
+  {
+    "source": "palettes_base/GY8S32GWsAA-irz.jpeg",
+    "index": 0,
+    "title": "Cranbrook Dusk",
+    "code": "MP103",
+    "credit": null,
+    "colors": [
+      { "hex": "#A65570", "name": "Cranbrook", "role": "primary" },
+      { "hex": "#E5DCD6", "name": "Cultured Peal", "role": "surface" },
+      { "hex": "#F9F8EF", "name": "White Crest", "role": "background" },
+      { "hex": "#E4898A", "name": "Pink Chi", "role": "accent" },
+      { "hex": "#192236", "name": "Kon", "role": "text" },
+      { "hex": "#94B8C1", "name": "Tahoe Blue", "role": "accent" }
+    ],
+    "gradients": null,
+    "tags": ["warm", "muted", "pink", "dark", "earthy"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GY8S32GWsAA-irz.jpeg",
+    "index": 1,
+    "title": "Biscuit Bloom",
+    "code": "MP105",
+    "credit": null,
+    "colors": [
+      { "hex": "#FDFDFD", "name": "Brilliance", "role": "background" },
+      { "hex": "#CED9C3", "name": "Turning Leaf", "role": "surface" },
+      { "hex": "#33673F", "name": "Genever Green", "role": "primary" },
+      { "hex": "#0A0908", "name": "Badab Black Wash", "role": "text" },
+      { "hex": "#FEEDCA", "name": "Biscuit", "role": "surface" },
+      { "hex": "#FFCF38", "name": "Peeps", "role": "accent" }
+    ],
+    "gradients": null,
+    "tags": ["earthy", "green", "warm", "muted", "natural"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GY8S32GWsAA-irz.jpeg",
+    "index": 2,
+    "title": "Rapture Poseidon",
+    "code": "MP106",
+    "credit": null,
+    "colors": [
+      { "hex": "#F6F3E7", "name": "Rapture's Light", "role": "background" },
+      { "hex": "#011C39", "name": "Naval Night", "role": "primary" },
+      { "hex": "#143C5D", "name": "Poseidon", "role": "accent" },
+      { "hex": "#E7D5C5", "name": "Silver Thistle Beige", "role": "surface" },
+      { "hex": "#FFBB55", "name": "Honey Crusted Chicken", "role": "accent" },
+      { "hex": "#C44E4F", "name": "Autumn Fire", "role": "primary" }
+    ],
+    "gradients": [["#F6F3E7", "#C44E4F"], ["#011C39", "#143C5D"]],
+    "tags": ["dark", "warm", "blue", "gradient", "earthy"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GY8S32GWsAA-irz.jpeg",
+    "index": 3,
+    "title": "Angel Picholine",
+    "code": "MP109",
+    "credit": null,
+    "colors": [
+      { "hex": "#F4EFEE", "name": "Angel Feather", "role": "background" },
+      { "hex": "#F5E1AC", "name": "Glad Yellow", "role": "accent" },
+      { "hex": "#A5A88F", "name": "Bud", "role": "surface" },
+      { "hex": "#BC5339", "name": "Orange Vermillion", "role": "primary" },
+      { "hex": "#2C3D37", "name": "Scarab", "role": "text" },
+      { "hex": "#566955", "name": "Picholine", "role": "accent" }
+    ],
+    "gradients": null,
+    "tags": ["muted", "earthy", "warm", "green", "terracotta"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GZ29EKiWgAQ926V.jpeg",
+    "index": 0,
+    "title": "Floppy Bunting",
+    "code": "MP116",
+    "credit": null,
+    "colors": [
+      { "hex": "#110044", "name": "Floppy Disk", "role": "text" },
+      { "hex": "#301885", "name": "Indiglow", "role": "primary" },
+      { "hex": "#006CA9", "name": "Indigo Bunting", "role": "accent" },
+      { "hex": "#5D1F1E", "name": "Red Oxide", "role": "accent" },
+      { "hex": "#FFE500", "name": "Star", "role": "accent" },
+      { "hex": "#F6F4EF", "name": "The Speed of Light", "role": "background" }
+    ],
+    "gradients": null,
+    "tags": ["dark", "vibrant", "blue", "retro", "bold"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GZiViJSXYAAF1W2.jpeg",
+    "index": 0,
+    "title": "Imperial Voldemort",
+    "code": "MP115",
+    "credit": null,
+    "colors": [
+      { "hex": "#FAFAFA", "name": "Dr. White", "role": "background" },
+      { "hex": "#DFDFE5", "name": "Festive Ferret", "role": "surface" },
+      { "hex": "#EC2938", "name": "Imperial Red", "role": "primary" },
+      { "hex": "#220022", "name": "Black Sabbath", "role": "text" },
+      { "hex": "#C5C5D3", "name": "Kiri Mist", "role": "surface" },
+      { "hex": "#2D135F", "name": "Voldemort", "role": "accent" }
+    ],
+    "gradients": null,
+    "tags": ["dark", "red", "purple", "bold", "minimal"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GaVjkKFW0AArW5P (1).jpeg",
+    "index": 0,
+    "title": "Pumpkin Ecological",
+    "code": "MP117",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#F8F4ED", "name": "Crystal Cut", "role": "background" },
+      { "hex": "#E0D6C8", "name": "Kestrel White", "role": "surface" },
+      { "hex": "#EB7B07", "name": "Pumpkin Cat", "role": "primary" },
+      { "hex": "#677F70", "name": "Ecological", "role": "accent" },
+      { "hex": "#181B26", "name": "Coarse Wool", "role": "text" },
+      { "hex": "#060609", "name": "Halloween Sateen", "role": "text" }
+    ],
+    "gradients": [["#F8F4ED", "#EB7B07"], ["#677F70", "#060609"]],
+    "tags": ["warm", "earthy", "orange", "dark", "gradient"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GazET-pXkAA66sA.jpeg",
+    "index": 0,
+    "title": "Onsen Amethyst",
+    "code": "MP079",
+    "credit": null,
+    "colors": [
+      { "hex": "#F1F0EF", "name": "Precious Pearls", "role": "background" },
+      { "hex": "#DFDDE0", "name": "Lavender Lace", "role": "surface" },
+      { "hex": "#66EEBB", "name": "Onsen", "role": "accent" },
+      { "hex": "#8D5EB7", "name": "Lusty Lavender", "role": "primary" },
+      { "hex": "#57317E", "name": "Foggy Amethyst", "role": "primary" },
+      { "hex": "#151632", "name": "Lost in Sadness", "role": "text" }
+    ],
+    "gradients": null,
+    "tags": ["pastel", "purple", "green", "cool", "minimal"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GbfEew4aIAAJGFg.jpeg",
+    "index": 0,
+    "title": "Emerald Denim Sunrise",
+    "code": "MP122",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#F7FCFE", "name": "Deutzia White", "role": "background" },
+      { "hex": "#DDE0E8", "name": "Orchid Whisper", "role": "surface" },
+      { "hex": "#F4BF77", "name": "Sunrise", "role": "accent" },
+      { "hex": "#007A5E", "name": "Emerald Dream", "role": "primary" },
+      { "hex": "#004C6A", "name": "Navy Dark Blue", "role": "accent" },
+      { "hex": "#00334F", "name": "Dark Denim Blue", "role": "text" }
+    ],
+    "gradients": [["#F4BF77", "#007A5E"], ["#004C6A", "#00334F"]],
+    "tags": ["cool", "earthy", "green", "blue", "gradient"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/Gc6vWxrW8AAu5LF.jpeg",
+    "index": 0,
+    "title": "Tundra Bighorn",
+    "code": "MP128",
+    "credit": null,
+    "colors": [
+      { "hex": "#F7F5EC", "name": "Icy Tundra", "role": "background" },
+      { "hex": "#FBEB50", "name": "Paris Daisy", "role": "accent" },
+      { "hex": "#973A36", "name": "Vermilion Seabass", "role": "primary" },
+      { "hex": "#FE9773", "name": "Hibiscus Delight", "role": "accent" },
+      { "hex": "#552211", "name": "Peaty Brown", "role": "text" },
+      { "hex": "#20120E", "name": "Bighorn Sheep", "role": "text" }
+    ],
+    "gradients": null,
+    "tags": ["warm", "earthy", "bold", "yellow", "red"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GcdZp-0XwAAybvo (1).jpeg",
+    "index": 0,
+    "title": "Garden Corn Harvest",
+    "code": "MP077",
+    "credit": null,
+    "colors": [
+      { "hex": "#F8F3E3", "name": "Daisy White", "role": "background" },
+      { "hex": "#424330", "name": "Garden Path", "role": "text" },
+      { "hex": "#AA5939", "name": "Summer Heat", "role": "primary" },
+      { "hex": "#DFD5BB", "name": "Caraway Seeds", "role": "surface" },
+      { "hex": "#5E5D3D", "name": "Eastern Bamboo", "role": "accent" },
+      { "hex": "#F2B717", "name": "Dent Corn", "role": "accent" }
+    ],
+    "gradients": null,
+    "tags": ["warm", "earthy", "green", "muted", "natural"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GdPevskXcAABgpA.jpeg",
+    "index": 0,
+    "title": "Lavender Fawn Breeze",
+    "code": "MP129",
+    "credit": null,
+    "colors": [
+      { "hex": "#DDBBFF", "name": "Lavender Fragrance", "role": "accent" },
+      { "hex": "#4D213D", "name": "Prestige Mauve", "role": "primary" },
+      { "hex": "#E5C1A3", "name": "Fabulous Fawn", "role": "surface" },
+      { "hex": "#FDFAF1", "name": "White Desert", "role": "background" },
+      { "hex": "#F5E5CE", "name": "Celtic Linen", "role": "surface" },
+      { "hex": "#275779", "name": "Royal Breeze", "role": "accent" }
+    ],
+    "gradients": [["#DDBBFF", "#4D213D"]],
+    "tags": ["pastel", "purple", "warm", "soft", "gradient"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GdzOLMFXYAANpGh (1).jpeg",
+    "index": 0,
+    "title": "Lucious Bokara Sand",
+    "code": "MP131",
+    "credit": null,
+    "colors": [
+      { "hex": "#F6F2F1", "name": "Bright White", "role": "background" },
+      { "hex": "#EAE2D3", "name": "Whisper White", "role": "surface" },
+      { "hex": "#91A673", "name": "Lucious Lime", "role": "accent" },
+      { "hex": "#3A4A3F", "name": "Dark Hunter Green", "role": "primary" },
+      { "hex": "#2A2725", "name": "Bokara Grey", "role": "text" },
+      { "hex": "#AE8F60", "name": "Wet Sand", "role": "accent" }
+    ],
+    "gradients": [["#3A4A3F", "#2A2725"]],
+    "tags": ["earthy", "green", "muted", "warm", "natural", "gradient"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GemyCJQWUAAtWob.jpeg",
+    "index": 0,
+    "title": "Sugar Robin Orc",
+    "code": "MP134",
+    "credit": null,
+    "colors": [
+      { "hex": "#FFF9F5", "name": "Sugar Milk", "role": "background" },
+      { "hex": "#27221F", "name": "Orka Black", "role": "text" },
+      { "hex": "#976F3C", "name": "Half Orc Highlight", "role": "accent" },
+      { "hex": "#E9E1D9", "name": "Spring Wood", "role": "surface" },
+      { "hex": "#C2452D", "name": "Autumn Robin", "role": "primary" },
+      { "hex": "#C5D6EB", "name": "Fluid Blue", "role": "accent" }
+    ],
+    "gradients": [["#FFF9F5", "#C2452D"]],
+    "tags": ["warm", "earthy", "red", "minimal", "gradient"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GfRIjAHWYAA2Hjz.jpeg",
+    "index": 0,
+    "title": "Ruby Tannenbaum",
+    "code": "MP136",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#F5F4ED", "name": "Morning Snow", "role": "background" },
+      { "hex": "#D3CABF", "name": "Ashen Tan", "role": "surface" },
+      { "hex": "#BB1122", "name": "Ruby Star", "role": "primary" },
+      { "hex": "#F0B069", "name": "Barrel", "role": "accent" },
+      { "hex": "#005522", "name": "O Tannenbaum", "role": "accent" },
+      { "hex": "#0F261F", "name": "Deep Slate Green", "role": "text" }
+    ],
+    "gradients": [["#F5F4ED", "#BB1122"], ["#F0B069", "#0F261F"]],
+    "tags": ["warm", "earthy", "red", "green", "bold", "gradient"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/Gfts5vZXkAAvj6V.jpeg",
+    "index": 0,
+    "title": "Nordic Grape Abyss",
+    "code": "MP138",
+    "credit": null,
+    "colors": [
+      { "hex": "#C5D9E3", "name": "Blue Pearl", "role": "surface" },
+      { "hex": "#1D393C", "name": "Nordic", "role": "primary" },
+      { "hex": "#0C1B15", "name": "Verdant Abyss", "role": "text" },
+      { "hex": "#A19ABD", "name": "Grape Gatsby", "role": "accent" },
+      { "hex": "#F6F4EF", "name": "The Speed of Light", "role": "background" },
+      { "hex": "#B4C4C3", "name": "Misty Blue", "role": "surface" }
+    ],
+    "gradients": null,
+    "tags": ["cool", "dark", "blue", "green", "muted"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GgdxduOW4AEX69q.jpeg",
+    "index": 0,
+    "title": "Dusk Skin Gradients",
+    "code": "No.56",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#EFEEE9", "name": null, "role": "background" },
+      { "hex": "#F0DCCB", "name": null, "role": "surface" },
+      { "hex": "#E8B793", "name": null, "role": "accent" },
+      { "hex": "#795953", "name": null, "role": "primary" },
+      { "hex": "#324038", "name": null, "role": "text" }
+    ],
+    "gradients": [
+      ["#EFEEE9", "#E8B793"],
+      ["#F0DCCB", "#E8B793"],
+      ["#E8B793", "#795953"],
+      ["#F0DCCB", "#324038"],
+      ["#795953", "#324038"]
+    ],
+    "tags": ["warm", "earthy", "gradient", "muted", "skin", "neutral"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GgsxWvcW4AAb-W2.jpeg",
+    "index": 0,
+    "title": "Salmon Iris Teal",
+    "code": "MP049",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#F4F3EE", "name": "Rice Milk", "role": "background" },
+      { "hex": "#F7D3AD", "name": "Ice Cream Parlour", "role": "surface" },
+      { "hex": "#FF7356", "name": "Fresh Salmon", "role": "primary" },
+      { "hex": "#794EF2", "name": "Iris Euphoria", "role": "accent" },
+      { "hex": "#00555A", "name": "Deep Teal", "role": "accent" },
+      { "hex": "#023C40", "name": "Juniper Shade", "role": "text" }
+    ],
+    "gradients": [["#F7D3AD", "#FF7356"], ["#794EF2", "#023C40"]],
+    "tags": ["warm", "vibrant", "orange", "purple", "teal", "gradient"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/Gh_gXS0XYAAKXWA.jpeg",
+    "index": 0,
+    "title": "Garden Corn Harvest",
+    "code": "MP077",
+    "credit": null,
+    "colors": [
+      { "hex": "#F8F3E3", "name": "Daisy White", "role": "background" },
+      { "hex": "#F2B717", "name": "Dent Corn", "role": "accent" },
+      { "hex": "#424330", "name": "Garden Path", "role": "text" },
+      { "hex": "#DFD5BB", "name": "Caraway Seeds", "role": "surface" },
+      { "hex": "#AA5939", "name": "Summer Heat", "role": "primary" },
+      { "hex": "#5E5D3D", "name": "Eastern Bamboo", "role": "accent" }
+    ],
+    "gradients": null,
+    "tags": ["warm", "earthy", "green", "muted", "natural"],
+    "duplicate_of": "GcdZp-0XwAAybvo (1).jpeg",
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/Gi3-eqhWcAAcwLZ (1).jpeg",
+    "index": 0,
+    "title": "Plantain Nectar Chocolate",
+    "code": "MP147",
+    "credit": null,
+    "colors": [
+      { "hex": "#356554", "name": "Plantain Green", "role": "primary" },
+      { "hex": "#E8DEDA", "name": "Memories", "role": "surface" },
+      { "hex": "#FFD49D", "name": "Mango Nectar", "role": "accent" },
+      { "hex": "#6D4433", "name": "Noble Chocolate", "role": "accent" },
+      { "hex": "#9D6646", "name": "Argan Oil", "role": "accent" },
+      { "hex": "#FCF8F5", "name": "Vanilla Foam", "role": "background" }
+    ],
+    "gradients": null,
+    "tags": ["earthy", "green", "warm", "natural", "muted"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GiOw1xaXEAAjQiR.jpeg",
+    "index": 0,
+    "title": "Jade Plum Lagoon",
+    "code": "MP145",
+    "credit": null,
+    "colors": [
+      { "hex": "#F7F1E1", "name": "Coconut Twist", "role": "background" },
+      { "hex": "#FBEC5D", "name": "Corn", "role": "accent" },
+      { "hex": "#234537", "name": "Burnham", "role": "primary" },
+      { "hex": "#6DD1BB", "name": "Jade Lagoon", "role": "accent" },
+      { "hex": "#5E3958", "name": "Parma Plum Red", "role": "accent" },
+      { "hex": "#008292", "name": "Island Lush", "role": "primary" }
+    ],
+    "gradients": [["#6DD1BB", "#008292"], ["#FBEC5D", "#008292"]],
+    "tags": ["vibrant", "green", "teal", "warm", "gradient"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/Giod8F-XMAAwXo1.jpeg",
+    "index": 0,
+    "title": "Alpine Dusk Gradients",
+    "code": "No.146",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#E9EBE7", "name": null, "role": "background" },
+      { "hex": "#FFAF38", "name": null, "role": "accent" },
+      { "hex": "#127453", "name": null, "role": "primary" },
+      { "hex": "#4E32B2", "name": null, "role": "accent" },
+      { "hex": "#221155", "name": null, "role": "text" }
+    ],
+    "gradients": [
+      ["#E9EBE7", "#FFAF38"],
+      ["#E9EBE7", "#127453"],
+      ["#FFAF38", "#127453"],
+      ["#FFAF38", "#221155"],
+      ["#4E32B2", "#221155"]
+    ],
+    "tags": ["vibrant", "warm", "gradient", "green", "purple", "bold"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GjMkbDjWcAAUmwf.jpeg",
+    "index": 0,
+    "title": "Abalone Oblivion",
+    "code": "MP148",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#E1DED9", "name": "Abalone Shell", "role": "background" },
+      { "hex": "#A9C4C4", "name": "Blende Blue", "role": "surface" },
+      { "hex": "#E4B55D", "name": "River of Gold", "role": "accent" },
+      { "hex": "#755468", "name": "Hothouse Orchid", "role": "primary" },
+      { "hex": "#004466", "name": "Lush Aqua", "role": "accent" },
+      { "hex": "#000435", "name": "Oblivion", "role": "text" }
+    ],
+    "gradients": [["#E1DED9", "#000435"], ["#E4B55D", "#755468"]],
+    "tags": ["muted", "cool", "blue", "earthy", "gradient"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/Gjl6k7xXwAAyj8B (1).jpeg",
+    "index": 0,
+    "title": "Gooseberry Baltic Gold",
+    "code": "MP097",
+    "credit": null,
+    "colors": [
+      { "hex": "#F1F3F3", "name": "Zappy Zebra", "role": "background" },
+      { "hex": "#F3DACE", "name": "Possibly Pink", "role": "surface" },
+      { "hex": "#A23F5D", "name": "Gooseberry", "role": "primary" },
+      { "hex": "#FFB347", "name": "Agrellan Badland", "role": "accent" },
+      { "hex": "#102329", "name": "Crow Feather", "role": "text" },
+      { "hex": "#135952", "name": "Baltic Prince", "role": "accent" }
+    ],
+    "gradients": [["#FFB347", "#A23F5D"], ["#A23F5D", "#135952"]],
+    "tags": ["warm", "muted", "pink", "teal", "gradient"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/Gjwkm3jXwAA-hNS.jpeg",
+    "index": 0,
+    "title": "Lust Gradient Haiku",
+    "code": "No.034",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#492351", "name": null, "role": "text" },
+      { "hex": "#7F376D", "name": null, "role": "primary" },
+      { "hex": "#D55882", "name": null, "role": "accent" },
+      { "hex": "#FF808A", "name": null, "role": "accent" },
+      { "hex": "#FFBF92", "name": null, "role": "surface" },
+      { "hex": "#F6E5D9", "name": null, "role": "background" }
+    ],
+    "gradients": [["#492351", "#F6E5D9"]],
+    "tags": ["warm", "pastel", "pink", "purple", "gradient", "vibrant"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  }
+]

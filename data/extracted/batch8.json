@@ -1,0 +1,614 @@
+[
+  {
+    "source": "palettes_base/GXf3OQNXEAAlBMb.jpeg",
+    "index": 0,
+    "title": "Chalk Mesa Primer",
+    "code": "MP107",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#F4F4F0", "name": "Classic Chalk", "role": "background" },
+      { "hex": "#E3D1CC", "name": "China Silk", "role": "surface" },
+      { "hex": "#F9ECB6", "name": "Easy on the Eyes", "role": "surface" },
+      { "hex": "#EA8160", "name": "Mesa Sunrise", "role": "primary" },
+      { "hex": "#905755", "name": "Carpe Diem", "role": "accent" },
+      { "hex": "#21303E", "name": "Imperial Primer", "role": "text" }
+    ],
+    "gradients": [["#F9ECB6", "#EA8160", "#905755", "#21303E"]],
+    "tags": ["warm", "earthy", "muted", "terracotta", "dark"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GYVC2yzWYAAkEAL.jpeg",
+    "index": 0,
+    "title": "Crest Peacock Neverything",
+    "code": "MP110",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#F9F8EF", "name": "White Crest", "role": "background" },
+      { "hex": "#E9D6BD", "name": "Writer's Parchment", "role": "surface" },
+      { "hex": "#A3C0BD", "name": "Aquaverde", "role": "primary" },
+      { "hex": "#FB4F14", "name": "Orioles Orange", "role": "accent" },
+      { "hex": "#104A65", "name": "Victorian Peacock", "role": "text" },
+      { "hex": "#13181B", "name": "Neverything", "role": "text" }
+    ],
+    "gradients": [["#A3C0BD", "#FB4F14", "#104A65", "#13181B"]],
+    "tags": ["warm", "earthy", "teal", "orange", "dark"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GZRIQ4JWcAA3M2e.jpeg",
+    "index": 0,
+    "title": "Habanero Deep Space",
+    "code": "MP113",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#F4F1EC", "name": "Luster White", "role": "background" },
+      { "hex": "#DAD1C8", "name": "Jodhpur Tan", "role": "surface" },
+      { "hex": "#F98513", "name": "Habañero", "role": "primary" },
+      { "hex": "#9BACD8", "name": "Aster Flower Blue", "role": "accent" },
+      { "hex": "#223382", "name": "Deep Space Royal", "role": "primary" },
+      { "hex": "#111144", "name": "Deadly Depths", "role": "text" }
+    ],
+    "gradients": [["#F98513", "#9BACD8", "#223382", "#111144"]],
+    "tags": ["vibrant", "blue", "orange", "dark", "bold"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GZx8VafWAAccWHZ.jpeg",
+    "index": 0,
+    "title": "Caramel Cosmic Sapphire",
+    "code": "MP018",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#F8F7F5", "name": "Rapture's Light", "role": "background" },
+      { "hex": "#FAEBD7", "name": "Milk Tooth", "role": "surface" },
+      { "hex": "#E3AF64", "name": "Caramel Essence", "role": "primary" },
+      { "hex": "#0F1939", "name": "Cosmic Odyssey", "role": "text" },
+      { "hex": "#26428B", "name": "Blue Oblivion", "role": "primary" },
+      { "hex": "#516AC8", "name": "Sapphire Dust", "role": "accent" }
+    ],
+    "gradients": [["#E3AF64", "#26428B"], ["#516AC8", "#26428B"]],
+    "tags": ["warm", "blue", "gold", "dark", "elegant"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GaavUjgWYAQL9YN (1).jpeg",
+    "index": 0,
+    "title": "Mahogany Squash Teal",
+    "code": "MP118",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#F6F2F1", "name": "Bright White", "role": "background" },
+      { "hex": "#FFEBCD", "name": "Blanched Almond", "role": "surface" },
+      { "hex": "#BBBBFF", "name": "Dried Lilac", "role": "accent" },
+      { "hex": "#432722", "name": "Polished Mahogany", "role": "text" },
+      { "hex": "#FC7604", "name": "Butternut Squash", "role": "primary" },
+      { "hex": "#0E4D4E", "name": "Port Malmesbury", "role": "primary" }
+    ],
+    "gradients": [["#FC7604", "#FFEBCD"], ["#0E4D4E", "#BBBBFF"]],
+    "tags": ["vibrant", "warm", "teal", "orange", "lavender"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/Gb7DWHBWsAAJ4cs.jpeg",
+    "index": 0,
+    "title": "Moss Gold Forest",
+    "code": "MP008",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#2C3830", "name": "Shadow Moss", "role": "primary" },
+      { "hex": "#F6F4EF", "name": "The Speed of Light", "role": "background" },
+      { "hex": "#1B1E1E", "name": "Mariana Black", "role": "text" },
+      { "hex": "#AA8344", "name": "Walnut Shell", "role": "accent" },
+      { "hex": "#D3BA75", "name": "Good as Gold", "role": "primary" },
+      { "hex": "#47553C", "name": "Green Tone Ink", "role": "primary" }
+    ],
+    "gradients": [["#F6F4EF", "#D3BA75"], ["#2C3830", "#47553C"]],
+    "tags": ["earthy", "green", "gold", "dark", "muted"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GbqOiHeWAAADAQz.jpeg",
+    "index": 0,
+    "title": "Midnight Navy Kimchi",
+    "code": "MP007",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#F2F3F4", "name": "Anti-Flash White", "role": "background" },
+      { "hex": "#EBEAED", "name": "Lace Cap", "role": "surface" },
+      { "hex": "#020035", "name": "Midnight Blue", "role": "text" },
+      { "hex": "#ED4B00", "name": "Kimchi", "role": "accent" },
+      { "hex": "#02066F", "name": "Dark Royalty", "role": "primary" },
+      { "hex": "#2000B1", "name": "Deep Sea Exploration", "role": "primary" }
+    ],
+    "tags": ["dark", "blue", "vibrant", "bold", "minimal"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GcGF009XMAA1IlK.jpeg",
+    "index": 0,
+    "title": "Fogtown Galapagos Breeze",
+    "code": "MP125",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#EEF0E7", "name": "Fogtown", "role": "background" },
+      { "hex": "#19443C", "name": "Black Soap", "role": "text" },
+      { "hex": "#F8DCA3", "name": "Clay Dust", "role": "surface" },
+      { "hex": "#F3DCD1", "name": "Tantalizing Tan", "role": "surface" },
+      { "hex": "#29685F", "name": "Galapagos Green", "role": "primary" },
+      { "hex": "#B8E9E4", "name": "Tahitian Breeze", "role": "accent" }
+    ],
+    "gradients": [["#29685F", "#19443C"]],
+    "tags": ["earthy", "green", "pastel", "muted", "warm"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GcrYAQcWMAELR5Q.jpeg",
+    "index": 0,
+    "title": "Pink Heron Greenhouse",
+    "code": "MP127",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#F6C6B9", "name": "Serene Pink", "role": "accent" },
+      { "hex": "#ECECE1", "name": "Grand Heron", "role": "background" },
+      { "hex": "#745D83", "name": "Mystical Purple", "role": "primary" },
+      { "hex": "#92B979", "name": "Prime Merchandise", "role": "primary" },
+      { "hex": "#3E6334", "name": "Greenhouse", "role": "primary" },
+      { "hex": "#1C401F", "name": "Queen of Trees", "role": "text" }
+    ],
+    "tags": ["pastel", "green", "purple", "pink", "muted"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GdRGMa_XUAAz9Nk.jpeg",
+    "index": 0,
+    "title": "Sage Blue Color Pairs",
+    "code": null,
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#D2DBD7", "name": null, "role": "background" },
+      { "hex": "#9EBBAA", "name": null, "role": "primary" },
+      { "hex": "#D1DCE1", "name": null, "role": "background" },
+      { "hex": "#9DBAC6", "name": null, "role": "primary" },
+      { "hex": "#D1DBE5", "name": null, "role": "background" },
+      { "hex": "#9DB7D2", "name": null, "role": "primary" },
+      { "hex": "#D1D5DF", "name": null, "role": "background" },
+      { "hex": "#A2A5C2", "name": null, "role": "primary" },
+      { "hex": "#D2CBD5", "name": null, "role": "background" },
+      { "hex": "#A98BAA", "name": null, "role": "primary" }
+    ],
+    "tags": ["pastel", "muted", "cool", "monochrome", "minimal", "blue"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GdRGMa_XUAAz9Nk.jpeg",
+    "index": 1,
+    "title": "Mauve Pink Pair",
+    "code": null,
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#DCCFD6", "name": null, "role": "background" },
+      { "hex": "#C593A6", "name": null, "role": "primary" }
+    ],
+    "tags": ["pastel", "pink", "muted", "minimal"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GeC7uuyXgAAIs3K.jpeg",
+    "index": 0,
+    "title": "Bee Hall Galaxy Jam",
+    "code": "MP132",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#F2CC64", "name": "Bee Hall", "role": "primary" },
+      { "hex": "#117777", "name": "Prismarine", "role": "primary" },
+      { "hex": "#F7F4EA", "name": "Corn Milk", "role": "background" },
+      { "hex": "#FA7B62", "name": "Akebono Dawn", "role": "accent" },
+      { "hex": "#330077", "name": "Galactic Federation", "role": "primary" },
+      { "hex": "#0B0119", "name": "Midnight Jam", "role": "text" }
+    ],
+    "gradients": [["#F2CC64", "#FA7B62"], ["#117777", "#330077"]],
+    "tags": ["vibrant", "yellow", "teal", "purple", "dark", "bold"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/Gf-YIi3WUAAAtii.jpeg",
+    "index": 0,
+    "title": "Palladian Truffle Navy",
+    "code": "MP072",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#EEE9DF", "name": "Palladian", "role": "background" },
+      { "hex": "#C9C1B1", "name": "Oatmeal", "role": "surface" },
+      { "hex": "#2C3B4D", "name": "Blue Fantastic", "role": "text" },
+      { "hex": "#FFB162", "name": "Burning Flame", "role": "accent" },
+      { "hex": "#A35139", "name": "Truffle Trouble", "role": "primary" },
+      { "hex": "#1B2632", "name": "Abyssal Anchorfish Blue", "role": "text" }
+    ],
+    "tags": ["warm", "earthy", "dark", "muted", "navy"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GffxUrUXgAA2zEc (1).jpeg",
+    "index": 0,
+    "title": "Blackwood Gold Phthalo",
+    "code": "MP137",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#24313D", "name": "Blue-Black", "role": "primary" },
+      { "hex": "#15151C", "name": "Absence of Light", "role": "text" },
+      { "hex": "#CF9F52", "name": "Bright Gold", "role": "accent" },
+      { "hex": "#4A2125", "name": "Dark Red Brown", "role": "primary" },
+      { "hex": "#F5F4ED", "name": "Morning Snow", "role": "background" },
+      { "hex": "#123524", "name": "Phthalo Green", "role": "primary" }
+    ],
+    "tags": ["dark", "gold", "earthy", "green", "moody"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/Gg6te9kXYAEYdRC (1).jpeg",
+    "index": 0,
+    "title": "Sage Teal Dusk Gradients",
+    "code": null,
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#EBECF0", "name": null, "role": "background" },
+      { "hex": "#D5DCA9", "name": null, "role": "primary" },
+      { "hex": "#8EBAA6", "name": null, "role": "primary" },
+      { "hex": "#45826B", "name": null, "role": "primary" },
+      { "hex": "#6F5166", "name": null, "role": "accent" },
+      { "hex": "#150811", "name": null, "role": "text" }
+    ],
+    "gradients": [
+      ["#EBECF0", "#D5DCA9"],
+      ["#D5DCA9", "#8EBAA6"],
+      ["#D5DCA9", "#45826B"],
+      ["#8EBAA6", "#6F5166"],
+      ["#6F5166", "#150811"]
+    ],
+    "tags": ["gradient", "green", "sage", "muted", "dark"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/Gge2tWrX0AArRVC.jpeg",
+    "index": 0,
+    "title": "Siesta Whale Strawberry",
+    "code": "MP088",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#E9D8C8", "name": "Siesta Tan", "role": "background" },
+      { "hex": "#85A3B2", "name": "Grauzone", "role": "surface" },
+      { "hex": "#732553", "name": "Pico Eggplant", "role": "primary" },
+      { "hex": "#FF5C8D", "name": "Stellar Strawberry", "role": "accent" },
+      { "hex": "#1E3442", "name": "Blue Whale", "role": "text" },
+      { "hex": "#142030", "name": "Hei Se Black", "role": "text" }
+    ],
+    "tags": ["warm", "pink", "dark", "blue", "earthy"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/Gge2tWrX0AArRVC.jpeg",
+    "index": 1,
+    "title": "Luster Habanero Depths",
+    "code": "MP113",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#F4F1EC", "name": "Luster White", "role": "background" },
+      { "hex": "#DAD1C8", "name": "Jodhpur Tan", "role": "surface" },
+      { "hex": "#F98513", "name": "Habañero", "role": "primary" },
+      { "hex": "#9BACD8", "name": "Aster Flower Blue", "role": "accent" },
+      { "hex": "#223382", "name": "Deep Space Royal", "role": "primary" },
+      { "hex": "#111144", "name": "Deadly Depths", "role": "text" }
+    ],
+    "tags": ["vibrant", "blue", "orange", "dark", "bold"],
+    "duplicate_of": "palettes_base/GZRIQ4JWcAA3M2e.jpeg",
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/Gge2tWrX0AArRVC.jpeg",
+    "index": 2,
+    "title": "Cashmere Wahoo Noble",
+    "code": "MP061",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#E8DFD5", "name": "Pale Cashmere", "role": "background" },
+      { "hex": "#DBBBA7", "name": "Cinnamon Ice", "role": "surface" },
+      { "hex": "#FF7124", "name": "Burning Orange", "role": "accent" },
+      { "hex": "#3B4B83", "name": "Blue Estate", "role": "primary" },
+      { "hex": "#272D4E", "name": "Wahoo", "role": "primary" },
+      { "hex": "#202124", "name": "Noble Black", "role": "text" }
+    ],
+    "tags": ["warm", "earthy", "orange", "blue", "dark"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/Gge2tWrX0AArRVC.jpeg",
+    "index": 3,
+    "title": "Rapture Autumn Naval",
+    "code": "MP106",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#F6F3E7", "name": "Rapture's Light", "role": "background" },
+      { "hex": "#E7D5C5", "name": "Silver Thistle Beige", "role": "surface" },
+      { "hex": "#FFBB55", "name": "Honey Crusted Chicken", "role": "accent" },
+      { "hex": "#C44E4F", "name": "Autumn Fire", "role": "primary" },
+      { "hex": "#143C5D", "name": "Poseidon", "role": "primary" },
+      { "hex": "#011C39", "name": "Naval Night", "role": "text" }
+    ],
+    "tags": ["warm", "earthy", "yellow", "red", "navy", "dark"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/Gge2tWrX0AArRVC.jpeg",
+    "index": 4,
+    "title": "Morning Toxic Black Kite",
+    "code": "MP059",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#F5F4ED", "name": "Morning Snow", "role": "background" },
+      { "hex": "#ECECDC", "name": "Amazon Mist", "role": "surface" },
+      { "hex": "#A0C9CB", "name": "Aqua Mist", "role": "accent" },
+      { "hex": "#FF6037", "name": "Toxic Orange", "role": "primary" },
+      { "hex": "#733635", "name": "Garnet", "role": "primary" },
+      { "hex": "#351E1C", "name": "Black Kite", "role": "text" }
+    ],
+    "tags": ["warm", "earthy", "orange", "teal", "dark"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/Gge2tWrX0AArRVC.jpeg",
+    "index": 5,
+    "title": "Praxeti Spring Mirage",
+    "code": "MP076",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#F6F7ED", "name": "Praxeti White", "role": "background" },
+      { "hex": "#DBE64C", "name": "First Colors of Spring", "role": "accent" },
+      { "hex": "#74C365", "name": "Mantis", "role": "primary" },
+      { "hex": "#00804C", "name": "Picture Book Green", "role": "primary" },
+      { "hex": "#1E488F", "name": "Nuit Blanche", "role": "primary" },
+      { "hex": "#001F3F", "name": "Midnight Mirage", "role": "text" }
+    ],
+    "tags": ["green", "vibrant", "blue", "dark", "bold"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/Gge2tWrX0AArRVC.jpeg",
+    "index": 6,
+    "title": "Chef Hat Bacchic Smoke",
+    "code": "MP096",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#F3F4F5", "name": "Chef's Hat", "role": "background" },
+      { "hex": "#DBE0E1", "name": "Drifting Cloud", "role": "surface" },
+      { "hex": "#FF9408", "name": "Merin's Fire", "role": "accent" },
+      { "hex": "#CA3F16", "name": "Sauce Piquante", "role": "primary" },
+      { "hex": "#95122C", "name": "Bacchic Burgundy", "role": "primary" },
+      { "hex": "#100C08", "name": "Smoky Black", "role": "text" }
+    ],
+    "tags": ["warm", "dark", "red", "orange", "bold", "earthy"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/Gge2tWrX0AArRVC.jpeg",
+    "index": 7,
+    "title": "Venetian Pumpkin Fence",
+    "code": "MP069",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#F7EDDA", "name": "Venetian Lace", "role": "background" },
+      { "hex": "#F7DFBA", "name": "Macadamia Beige", "role": "surface" },
+      { "hex": "#FFA74F", "name": "Pumpkin Vapor", "role": "accent" },
+      { "hex": "#F0531C", "name": "Fiery Glow", "role": "primary" },
+      { "hex": "#2E4B3C", "name": "Norfolk Green", "role": "primary" },
+      { "hex": "#09332C", "name": "Fence Green", "role": "text" }
+    ],
+    "tags": ["warm", "earthy", "orange", "green", "dark"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/Gge2tWrX0AArRVC.jpeg",
+    "index": 8,
+    "title": "Chalk Flamingo Emerald",
+    "code": "MP063",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#F6F4F1", "name": "White Chalk", "role": "background" },
+      { "hex": "#FDDEBE", "name": "Butter White", "role": "surface" },
+      { "hex": "#E1634F", "name": "Flamingo", "role": "accent" },
+      { "hex": "#5D9865", "name": "Wildness Mint", "role": "primary" },
+      { "hex": "#1A3F2C", "name": "Mizukaze Green", "role": "primary" },
+      { "hex": "#12221D", "name": "Black Emerald", "role": "text" }
+    ],
+    "tags": ["warm", "green", "red", "earthy", "dark"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/Gge2tWrX0AArRVC.jpeg",
+    "index": 9,
+    "title": "White Crest Orioles Teal",
+    "code": "MP110",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#F9F8EF", "name": "White Crest", "role": "background" },
+      { "hex": "#E9D6BD", "name": "Writer's Parchment", "role": "surface" },
+      { "hex": "#A3C0BD", "name": "Aquaverde", "role": "primary" },
+      { "hex": "#FB4F14", "name": "Orioles Orange", "role": "accent" },
+      { "hex": "#104A65", "name": "Victorian Peacock", "role": "primary" },
+      { "hex": "#13181B", "name": "Neverything", "role": "text" }
+    ],
+    "tags": ["warm", "earthy", "teal", "orange", "dark"],
+    "duplicate_of": "palettes_base/GYVC2yzWYAAkEAL.jpeg",
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/Gh5cDUkWUAAb03_ (1).jpeg",
+    "index": 0,
+    "title": "Ivory Chasm Stallion",
+    "code": "MP144",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#FBF3F1", "name": "Ivory Tower", "role": "background" },
+      { "hex": "#C9DBFD", "name": "Frozen Dawn", "role": "surface" },
+      { "hex": "#DA655E", "name": "Salami Slice", "role": "accent" },
+      { "hex": "#9B3D3D", "name": "Mexican Red", "role": "primary" },
+      { "hex": "#102C33", "name": "Black Chasm", "role": "primary" },
+      { "hex": "#0E191C", "name": "Black Stallion", "role": "text" }
+    ],
+    "gradients": [["#FBF3F1", "#C9DBFD", "#DA655E", "#102C33", "#0E191C"]],
+    "tags": ["warm", "red", "dark", "teal", "muted"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GhMK0RpXAAEl3zy (1).jpeg",
+    "index": 0,
+    "title": "Crimson Eigengrau Watermelon",
+    "code": "MP142",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#FAFAFA", "name": "Dr. White", "role": "background" },
+      { "hex": "#550011", "name": "Saving Light", "role": "primary" },
+      { "hex": "#16161D", "name": "Eigengrau", "role": "text" },
+      { "hex": "#D30F3F", "name": "Last Warning", "role": "accent" },
+      { "hex": "#F5EDE0", "name": "White Flour", "role": "surface" },
+      { "hex": "#3E0816", "name": null, "role": "primary" },
+      { "hex": "#F05C85", "name": "Watermelon Juice", "role": "accent" }
+    ],
+    "tags": ["dark", "red", "pink", "bold", "minimal"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GhgMYUfXcAAewlr.jpeg",
+    "index": 0,
+    "title": "Gold Fjord Lagoon",
+    "code": "MP143",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#F6F1E5", "name": "Bright Moon", "role": "background" },
+      { "hex": "#FFE314", "name": "Crypto Gold", "role": "accent" },
+      { "hex": "#3D703E", "name": "Mount Hyjal", "role": "primary" },
+      { "hex": "#4497A1", "name": "Silent Lagoon", "role": "primary" },
+      { "hex": "#216B88", "name": "Saxony Blue", "role": "primary" },
+      { "hex": "#00253F", "name": "Midnight Fjord", "role": "text" }
+    ],
+    "gradients": [["#FFE314", "#4497A1", "#216B88", "#00253F"]],
+    "tags": ["yellow", "teal", "blue", "dark", "vibrant"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GiAAFu5XoAA4wN2.jpeg",
+    "index": 0,
+    "title": "Grotesk Typeface Palette",
+    "code": null,
+    "credit": null,
+    "colors": [
+      { "hex": "#DFD5BA", "name": null, "role": "background" },
+      { "hex": "#F2B618", "name": null, "role": "primary" },
+      { "hex": "#AA5A39", "name": null, "role": "accent" },
+      { "hex": "#5E5D3E", "name": null, "role": "primary" }
+    ],
+    "tags": ["warm", "earthy", "muted", "minimal", "retro"],
+    "duplicate_of": null,
+    "confidence": "sampled"
+  },
+  {
+    "source": "palettes_base/GiclVb2XkAE3YUq.jpeg",
+    "index": 0,
+    "title": "Corn Island Plum",
+    "code": "MP145",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#F7F1E1", "name": "Coconut Twist", "role": "background" },
+      { "hex": "#FBEC5D", "name": "Corn", "role": "accent" },
+      { "hex": "#008292", "name": "Island Lush", "role": "primary" },
+      { "hex": "#6DD1BB", "name": "Jade Lagoon", "role": "surface" },
+      { "hex": "#5E3958", "name": "Parma Plum Red", "role": "primary" },
+      { "hex": "#234537", "name": "Burnham", "role": "text" }
+    ],
+    "gradients": [["#FBEC5D", "#6DD1BB", "#008292", "#5E3958", "#234537"]],
+    "tags": ["vibrant", "yellow", "teal", "purple", "dark", "bold"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GixNROqXMAAKLMP.jpeg",
+    "index": 0,
+    "title": "Redwood Scarab Vermilion",
+    "code": "MP109",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#F5E1AC", "name": "Glad Yellow", "role": "accent" },
+      { "hex": "#F4EFEE", "name": "Angel Feather", "role": "background" },
+      { "hex": "#BC5339", "name": "Orange Vermillion", "role": "primary" },
+      { "hex": "#A5A88F", "name": "Bud", "role": "surface" },
+      { "hex": "#2C3D37", "name": "Scarab", "role": "text" },
+      { "hex": "#566955", "name": "Picholine", "role": "primary" }
+    ],
+    "tags": ["warm", "earthy", "green", "terracotta", "muted"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GjSuu4RXkAAIPLA.jpeg",
+    "index": 0,
+    "title": "Porcelain Citron Jelly",
+    "code": "MP073",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#0F282F", "name": "Black Box", "role": "text" },
+      { "hex": "#F2EDEC", "name": "Vintage Porcelain", "role": "background" },
+      { "hex": "#084D58", "name": "Watercolor Blue", "role": "primary" },
+      { "hex": "#D7DCD5", "name": "Nurture", "role": "surface" },
+      { "hex": "#D5C757", "name": "Citron", "role": "accent" },
+      { "hex": "#CE4A2D", "name": "Peanut Butter Jelly", "role": "primary" }
+    ],
+    "gradients": [["#0F282F", "#084D58"]],
+    "tags": ["earthy", "warm", "teal", "yellow", "dark"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/Gjra-ZpWMAAjn4_.jpeg",
+    "index": 0,
+    "title": "Lynx Crater Beets",
+    "code": "MP150",
+    "credit": "@AlexCristache",
+    "colors": [
+      { "hex": "#F7F7F7", "name": "Lynx White", "role": "background" },
+      { "hex": "#272A3B", "name": "Spinel Stone Black", "role": "text" },
+      { "hex": "#E6E5E4", "name": "Cold Morning", "role": "surface" },
+      { "hex": "#C8CED6", "name": "Crater Crawler", "role": "surface" },
+      { "hex": "#D4CAC5", "name": "Crushed Almond", "role": "surface" },
+      { "hex": "#736A86", "name": "Beets", "role": "accent" }
+    ],
+    "tags": ["muted", "cool", "minimal", "pastel", "monochrome"],
+    "duplicate_of": null,
+    "confidence": "printed"
+  }
+]
