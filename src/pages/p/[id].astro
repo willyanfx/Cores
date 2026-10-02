@@ -1,7 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import { contrast, formatOklch, formatRgb, inkOn, slugify, wcagLevel } from '../../lib/color';
-import { assignRoles, getPalettes, href } from '../../lib/palettes';
+import { assignRoles, conic, getPalettes, href, linear, paletteGradients, squareLayout } from '../../lib/palettes';
 
 export async function getStaticPaths() {
   const infos = await getPalettes();
@@ -24,6 +24,19 @@ const varName = (c: (typeof colors)[number], i: number) => slugify(c.name ?? '')
 const names = colors.map(varName).map((n, i, all) => (all.indexOf(n) === i ? n : `${n}-${i + 1}`));
 const prefix = slugify(title);
 
+const grads = paletteGradients(colors, gradients);
+const sweep = conic(colors);
+const square = squareLayout(colors.length);
+
+// Name color on a square tile: the palette color that reads best on it, else plain ink.
+const labelOn = (hex: string) => {
+  const best = colors
+    .map((c) => c.hex)
+    .filter((h) => h !== hex)
+    .sort((a, b) => contrast(b, hex) - contrast(a, hex))[0];
+  return best && contrast(best, hex) >= 4.5 ? best : inkOn(hex);
+};
+
 const exports = {
   css: `:root {\n${colors.map((c, i) => `  --${prefix}-${names[i]}: ${c.hex};`).join('\n')}\n}`,
   tailwind: `@theme {\n${colors.map((c, i) => `  --color-${prefix}-${names[i]}: ${c.hex};`).join('\n')}\n}`,
@@ -32,6 +45,9 @@ const exports = {
     null,
     2,
   ),
+  gradients: `:root {\n${grads.stops
+    .map((g, i) => `  --${prefix}-gradient-${i + 1}: ${linear(g)};`)
+    .join('\n')}\n  --${prefix}-conic: ${sweep};\n}`,
   hex: colors.map((c) => c.hex).join(', '),
 };
 
@@ -63,39 +79,98 @@ pairs.sort((x, y) => y.ratio - x.ratio);
     </dl>
   </header>
 
-  <section class="swatches" aria-label="Colors">
-    {
-      colors.map((c) => (
-        <div class="swatch" style={`--c:${c.hex};--on:${inkOn(c.hex)}`}>
-          <button type="button" class="fill" data-copy={c.hex} data-swatch={c.hex} aria-label={`Copy ${c.hex}`} />
-          <div class="label">
-            {c.name && <p class="name">{c.name}</p>}
-            <button type="button" class="hex big" data-copy={c.hex} data-swatch={c.hex}>
-              {c.hex}
-            </button>
-            <button type="button" class="alt" data-copy={formatRgb(c.hex)} data-swatch={c.hex}>
-              {formatRgb(c.hex)}
-            </button>
-            <button type="button" class="alt" data-copy={formatOklch(c.hex)} data-swatch={c.hex}>
-              {formatOklch(c.hex)}
-            </button>
+  <section class="view" aria-label="Colors">
+    <div class="wrap views" role="group" aria-label="Layout">
+      <button type="button" data-view="stripes" aria-pressed="true">Stripes</button>
+      <button type="button" data-view="square" aria-pressed="false">Square</button>
+    </div>
+    <div class="swatches">
+      {
+        colors.map((c) => (
+          <div class="swatch" style={`--c:${c.hex};--on:${inkOn(c.hex)}`}>
+            <button type="button" class="fill" data-copy={c.hex} data-swatch={c.hex} aria-label={`Copy ${c.hex}`} />
+            <div class="label">
+              {c.name && <p class="name">{c.name}</p>}
+              <button type="button" class="hex big" data-copy={c.hex} data-swatch={c.hex}>
+                {c.hex}
+              </button>
+              <button type="button" class="alt" data-copy={formatRgb(c.hex)} data-swatch={c.hex}>
+                {formatRgb(c.hex)}
+              </button>
+              <button type="button" class="alt" data-copy={formatOklch(c.hex)} data-swatch={c.hex}>
+                {formatOklch(c.hex)}
+              </button>
+            </div>
           </div>
-        </div>
-      ))
-    }
+        ))
+      }
+    </div>
+    <div class="square-wrap">
+      <div class="square" style={`--cols:${square.cols};background:${sweep}`}>
+        {
+          colors.map((c, i) => {
+            const cell = square.cells[i];
+            return (
+              <button
+                type="button"
+                class="tile"
+                style={`--c:${c.hex};--on:${inkOn(c.hex)};--label:${labelOn(c.hex)};grid-row:${Math.floor(cell / square.cols) + 1};grid-column:${(cell % square.cols) + 1}`}
+                data-copy={c.hex}
+                data-swatch={c.hex}
+                aria-label={`Copy ${c.name ? `${c.name}, ` : ''}${c.hex}`}
+              >
+                <span class="ratio-tag">
+                  <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M8 1.5a6.5 6.5 0 0 1 0 13z" fill="currentColor" /></svg>
+                  {contrast(c.hex, inkOn(c.hex)).toFixed(2)}:1
+                </span>
+                <span class="tile-label">
+                  {c.name && <span class="tile-name">{c.name}</span>}
+                  <span class="tile-hex">{c.hex}</span>
+                </span>
+              </button>
+            );
+          })
+        }
+      </div>
+    </div>
   </section>
+  <script is:inline>
+    try {
+      const v = localStorage.getItem('cores-view');
+      if (v === 'square' || v === 'stripes') document.documentElement.dataset.view = v;
+    } catch {}
+  </script>
 
   <main class="wrap body">
     {
-      gradients.length > 0 && (
+      grads.stops.length > 0 && (
         <section class="block">
           <h2>Gradients</h2>
+          <p class="note">
+            {grads.built
+              ? 'Built from the palette: the background into each accent, then the accents into each other. Click a gradient to copy its CSS.'
+              : 'Taken from the source image. Click a gradient to copy its CSS.'}
+          </p>
           <div class="gradients">
-            {gradients.map((g) => {
-              const css = `linear-gradient(90deg in oklab, ${g.join(', ')})`;
+            {grads.stops.map((g) => {
+              const css = linear(g);
               return (
-                <button type="button" class="gradient" style={`background:${css}`} data-copy={css} data-label="gradient">
-                  <span>{g.join(' to ')}</span>
+                <button
+                  type="button"
+                  class="gradient"
+                  style={`background:${css};--top:${inkOn(g[0])};--bottom:${inkOn(g[g.length - 1])}`}
+                  data-copy={css}
+                  data-label="gradient CSS"
+                >
+                  {g.map((h, i) => (
+                    <span
+                      class="stop hex"
+                      style={`top:${(i / (g.length - 1)) * 100}%;color:${inkOn(h)}`}
+                      data-edge={i === 0 ? 'start' : i === g.length - 1 ? 'end' : undefined}
+                    >
+                      {h}
+                    </span>
+                  ))}
                 </button>
               );
             })}
@@ -151,6 +226,7 @@ pairs.sort((x, y) => y.ratio - x.ratio);
       <div class="tabs" role="tablist" aria-label="Export format">
         <button role="tab" aria-selected="true" data-tab="css">CSS variables</button>
         <button role="tab" aria-selected="false" data-tab="tailwind">Tailwind v4</button>
+        <button role="tab" aria-selected="false" data-tab="gradients">Gradients</button>
         <button role="tab" aria-selected="false" data-tab="json">JSON</button>
         <button role="tab" aria-selected="false" data-tab="hex">Hex list</button>
       </div>
@@ -158,7 +234,7 @@ pairs.sort((x, y) => y.ratio - x.ratio);
         Object.entries(exports).map(([k, v], i) => (
           <div class="code" role="tabpanel" data-panel={k} hidden={i > 0}>
             <pre><code>{v}</code></pre>
-            <button type="button" class="copy" data-copy={v} data-label={k === 'hex' ? 'hex list' : `${k} code`}>
+            <button type="button" class="copy" data-copy={v} data-label={k === 'hex' ? 'hex list' : k === 'gradients' ? 'gradient CSS' : `${k} code`}>
               Copy
             </button>
           </div>
@@ -179,6 +255,22 @@ pairs.sort((x, y) => y.ratio - x.ratio);
 </Base>
 
 <script>
+  // Stripes / square layout, remembered per browser
+  const viewButtons = document.querySelectorAll<HTMLButtonElement>('[data-view]');
+  const setView = (view: string) => {
+    document.documentElement.dataset.view = view;
+    viewButtons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === view)));
+  };
+  setView(document.documentElement.dataset.view ?? 'stripes');
+  viewButtons.forEach((b) =>
+    b.addEventListener('click', () => {
+      setView(b.dataset.view!);
+      try {
+        localStorage.setItem('cores-view', b.dataset.view!);
+      } catch {}
+    }),
+  );
+
   const tabs = document.querySelectorAll<HTMLButtonElement>('[role=tab]');
   tabs.forEach((tab) =>
     tab.addEventListener('click', () => {
@@ -258,6 +350,110 @@ pairs.sort((x, y) => y.ratio - x.ratio);
   .facts dd {
     margin: 0;
     font-weight: 500;
+  }
+
+  /* Layout toggle */
+  .views {
+    display: flex;
+    gap: 0.25rem;
+    padding-bottom: 1rem;
+  }
+
+  .views button {
+    padding: 0.4rem 0.9rem;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: none;
+    font-size: var(--step--1);
+    cursor: pointer;
+  }
+
+  .views button[aria-pressed='true'] {
+    border-color: var(--ink);
+    background: var(--raised);
+  }
+
+  .square-wrap {
+    display: none;
+    padding-inline: var(--gutter);
+  }
+
+  :global(html[data-view='square']) .swatches {
+    display: none;
+  }
+
+  :global(html[data-view='square']) .square-wrap {
+    display: block;
+  }
+
+  /* Square: the palette as a card, open cells show a conic sweep of its colors */
+  .square {
+    --cols: 3;
+    container-type: inline-size;
+    width: min(100%, 78vh, 46rem);
+    aspect-ratio: 1;
+    margin-inline: auto;
+    display: grid;
+    grid-template-columns: repeat(var(--cols), 1fr);
+    grid-template-rows: repeat(var(--cols), 1fr);
+    overflow: hidden;
+  }
+
+  .tile {
+    --k: calc(3 / var(--cols));
+    position: relative;
+    min-width: 0;
+    border: 0;
+    background: var(--c);
+    color: var(--on);
+    cursor: copy;
+    text-align: left;
+    padding: calc(3.6cqi * var(--k));
+  }
+
+  .tile:focus-visible {
+    outline-color: var(--on);
+    outline-offset: -6px;
+  }
+
+  .ratio-tag {
+    position: absolute;
+    top: calc(3.6cqi * var(--k));
+    left: calc(3.6cqi * var(--k));
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+    font-size: calc(1.8cqi * var(--k));
+    font-weight: 500;
+    line-height: 1;
+  }
+
+  .ratio-tag svg {
+    width: 1.05em;
+    height: 1.05em;
+  }
+
+  .tile-label {
+    position: absolute;
+    left: calc(3.6cqi * var(--k));
+    right: calc(2cqi * var(--k));
+    bottom: calc(3.6cqi * var(--k));
+    display: grid;
+    gap: 0.15em;
+  }
+
+  .tile-name {
+    color: var(--label);
+    font-size: calc(2.45cqi * var(--k));
+    font-weight: 500;
+    line-height: 1.15;
+  }
+
+  .tile-hex {
+    font-size: calc(3cqi * var(--k));
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    line-height: 1.1;
   }
 
   /* Swatches: full-bleed paint chips */
@@ -346,12 +542,14 @@ pairs.sort((x, y) => y.ratio - x.ratio);
 
   .body {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: clamp(3rem, 6vw, 5rem);
     padding-block: clamp(2.5rem, 6vw, 4.5rem) 5rem;
   }
 
   .block {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 1rem;
   }
 
@@ -367,25 +565,37 @@ pairs.sort((x, y) => y.ratio - x.ratio);
 
   .gradients {
     display: grid;
-    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(3.75rem, 1fr));
+    gap: clamp(0.5rem, 1.5vw, 1.25rem);
+    max-width: 60rem;
   }
 
   .gradient {
-    height: 6rem;
+    position: relative;
+    height: clamp(18rem, 48vh, 30rem);
     border: 0;
-    border-radius: 6px;
-    display: flex;
-    align-items: flex-end;
-    padding: 0.75rem;
+    border-radius: 14px;
     cursor: copy;
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.06);
   }
 
-  .gradient span {
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
-    background: rgb(0 0 0 / 0.45);
-    color: #fff;
-    font-size: var(--step--1);
+  .stop {
+    position: absolute;
+    left: 50%;
+    translate: -50% -50%;
+    font-size: clamp(0.625rem, 1.1vw, 0.8125rem);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .stop[data-edge='start'] {
+    translate: -50% 0;
+    margin-top: 1rem;
+  }
+
+  .stop[data-edge='end'] {
+    translate: -50% -100%;
+    margin-top: -1rem;
   }
 
   /* In-use mock */
