@@ -1,5 +1,5 @@
 ---
-import { BANDS, INK, MONO, RADIUS, SIZE, WORDMARK, logoRamp } from '../lib/logo';
+import { BANDS, MONO, RADIUS, SIZE, WORDMARK, logoRamp, type LogoRamp } from '../lib/logo';
 import { getPalettes, href } from '../lib/palettes';
 
 interface Props {
@@ -8,11 +8,15 @@ interface Props {
 
 const { class: className } = Astro.props;
 
-// Every palette the mark can wear, as [title, url, ramp].
-const ramps = (await getPalettes()).flatMap(({ palette }) => {
-  const ramp = logoRamp(palette.data.colors.map((c) => c.hex));
-  return ramp ? [[palette.data.title, href(palette.id), ramp]] : [];
-});
+// Fills in document order: ground, bands, wordmark.
+const fills = ({ ground, bands, ink }: LogoRamp) => [ground, ...bands, ink];
+
+// Every palette the mark can wear, as [title, url, fills].
+const ramps = (await getPalettes()).map(({ palette }) => [
+  palette.data.title,
+  href(palette.id),
+  fills(logoRamp(palette.data.colors.map((c) => c.hex))),
+]);
 const clip = `logo-clip-${Math.random().toString(36).slice(2, 8)}`;
 ---
 
@@ -22,21 +26,21 @@ const clip = `logo-clip-${Math.random().toString(36).slice(2, 8)}`;
       <clipPath id={clip}><rect width={SIZE} height={SIZE} rx={RADIUS} /></clipPath>
     </defs>
     <g clip-path={`url(#${clip})`}>
-      <rect class="band" width={SIZE} height={SIZE} style={`fill:${MONO[0]};--i:${BANDS.length}`} />
-      {BANDS.map((points, i) => <polygon class="band" points={points} style={`fill:${MONO[i + 1]};--i:${BANDS.length - 1 - i}`} />)}
+      <rect class="tone" width={SIZE} height={SIZE} style={`fill:${MONO.ground};--i:${BANDS.length}`} />
+      {BANDS.map((points, i) => <polygon class="tone" points={points} style={`fill:${MONO.bands[i]};--i:${BANDS.length - 1 - i}`} />)}
     </g>
-    <path d={WORDMARK} fill={INK} />
+    <path class="tone" d={WORDMARK} style={`fill:${MONO.ink};--i:${BANDS.length}`} />
   </svg>
   <p class="credit">Colors from <a>Monochrome</a></p>
 </div>
 
 <script>
-  type Entry = [title: string, url: string, ramp: string[]];
+  type Entry = [title: string, url: string, fills: string[]];
 
   const HOLD = 3200;
 
   for (const logo of document.querySelectorAll<HTMLElement>('[data-logo]')) {
-    const bands = [...logo.querySelectorAll<SVGElement>('.band')];
+    const shapes = [...logo.querySelectorAll<SVGElement>('.tone')];
     const link = logo.querySelector('a')!;
     const entries: Entry[] = JSON.parse(logo.dataset.ramps!);
     // Shuffle so each visit walks the collection in a new order.
@@ -48,8 +52,8 @@ const clip = `logo-clip-${Math.random().toString(36).slice(2, 8)}`;
     let next = 0;
     let paused = false;
     const show = () => {
-      const [title, url, ramp] = entries[next++ % entries.length];
-      bands.forEach((band, i) => (band.style.fill = ramp[i]));
+      const [title, url, fills] = entries[next++ % entries.length];
+      shapes.forEach((shape, i) => (shape.style.fill = fills[i]));
       link.textContent = title;
       link.href = url;
     };
@@ -83,7 +87,7 @@ const clip = `logo-clip-${Math.random().toString(36).slice(2, 8)}`;
   }
 
   /* Colors ripple outward from the point of the chevrons. */
-  .band {
+  .tone {
     transition: fill 900ms cubic-bezier(0.4, 0, 0.2, 1);
     transition-delay: calc(var(--i) * 45ms);
   }

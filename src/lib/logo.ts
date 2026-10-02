@@ -1,4 +1,4 @@
-import { oklch } from './color';
+import { contrast, oklch } from './color';
 
 /**
  * The Cores mark: nested diamonds centred on the middle of the right edge,
@@ -29,10 +29,14 @@ export const WORDMARK =
   'M44.14 88.23Q42.69 88.23 41.61 87.59Q40.54 86.94 39.94 85.77Q39.34 84.60 39.34 82.99Q39.34 81.39 39.94 80.21Q40.53 79.04 41.60 78.39Q42.66 77.75 44.08 77.75Q44.89 77.75 45.71 78.00Q46.52 78.26 47.20 78.89Q47.88 79.52 48.29 80.62Q48.69 81.72 48.69 83.41L40.56 83.41L40.56 82.06L47.04 82.06L46.63 82.62Q46.59 81.39 46.23 80.65Q45.87 79.90 45.30 79.56Q44.73 79.22 44.05 79.22Q43.20 79.22 42.60 79.67Q42.00 80.12 41.69 80.97Q41.37 81.81 41.37 83.01Q41.37 84.77 42.08 85.75Q42.79 86.73 44.13 86.73Q45.08 86.73 45.72 86.25Q46.37 85.77 46.69 84.85L48.48 85.40Q48.12 86.32 47.49 86.95Q46.86 87.58 46.00 87.91Q45.15 88.23 44.14 88.23Z' +
   'M54.51 88.23Q53.41 88.23 52.49 87.88Q51.57 87.53 50.96 86.81Q50.35 86.09 50.16 84.97L52.03 84.60Q52.13 85.69 52.78 86.23Q53.43 86.77 54.45 86.77Q55.48 86.77 56.05 86.28Q56.62 85.79 56.62 85.11Q56.62 84.51 56.20 84.15Q55.79 83.79 54.95 83.64L53.81 83.43Q53.31 83.34 52.76 83.18Q52.21 83.02 51.73 82.72Q51.25 82.42 50.95 81.93Q50.65 81.44 50.65 80.69Q50.65 79.70 51.17 79.05Q51.69 78.41 52.57 78.08Q53.44 77.75 54.49 77.75Q55.58 77.75 56.41 78.08Q57.25 78.42 57.78 79.04Q58.31 79.67 58.48 80.57L56.55 80.96Q56.49 80.44 56.26 80.04Q56.04 79.65 55.61 79.43Q55.19 79.21 54.49 79.21Q53.68 79.21 53.10 79.54Q52.53 79.88 52.53 80.55Q52.53 80.94 52.75 81.21Q52.97 81.49 53.39 81.66Q53.81 81.83 54.42 81.96L55.60 82.20Q56.38 82.35 57.06 82.66Q57.73 82.97 58.14 83.53Q58.56 84.09 58.56 85.01Q58.56 86.02 58.04 86.75Q57.52 87.47 56.61 87.85Q55.70 88.23 54.51 88.23Z';
 
-export const INK = '#FFFFFF';
+const INK = '#FFFFFF';
 
-/** Base fill followed by one color per band, outermost (darkest) first. */
-export type LogoRamp = string[];
+export interface LogoRamp {
+  ground: string;
+  /** One color per band, outermost (darkest) first. */
+  bands: string[];
+  ink: string;
+}
 
 type Lab = [number, number, number];
 
@@ -66,23 +70,34 @@ const toHex = ([L, a, b]: Lab): string => {
 };
 
 /**
- * Walk a palette from its darkest to its lightest color in OKLab, in evenly
- * spaced lightness steps that start slow, so the outer bands under the
- * wordmark stay dark like the source artwork. Returns null when the palette
- * has too little lightness range to read as a ramp.
+ * Dress the mark in a palette. The ground is the palette's richest color that
+ * still carries light type, and the bands walk from it to the palette's
+ * lightest color in OKLab, in evenly spaced lightness steps that start slow so
+ * the outer bands under the wordmark stay close to the ground. The wordmark
+ * takes the lightest color when it reads on the ground, otherwise white.
  */
-export function logoRamp(hexes: string[]): LogoRamp | null {
-  const stops = [...new Set(hexes)].map(toLab).sort((x, y) => x[0] - y[0]);
-  if (stops.length < 2) return null;
+export function logoRamp(hexes: string[]): LogoRamp {
+  const unique = [...new Set(hexes)];
+  const carriesType = (hex: string) => contrast(hex, '#FFFFFF') >= 5;
+  const byChroma = [...unique].sort((x, y) => oklch(y).c - oklch(x).c);
 
-  // Anchor near black so white type always sits on a dark ground.
-  const [l0, a0, b0] = stops[0];
-  if (l0 > 0.24) stops.unshift([0.2, a0 * 0.5, b0 * 0.5]);
+  let ground = byChroma.find(carriesType);
+  if (!ground) {
+    // Nothing is deep enough: darken the most colorful one until white reads on it.
+    const [L, a, b] = toLab(byChroma[0]);
+    let l = L;
+    while (l > 0.1 && !carriesType(toHex([l, a, b]))) l -= 0.02;
+    ground = toHex([l, a, b]);
+  }
+
+  const base = toLab(ground);
+  const stops = [base, ...unique.map(toLab).filter((s) => s[0] > base[0] + 0.02)].sort((x, y) => x[0] - y[0]);
+  const top = stops[stops.length - 1];
+  // Too little range to read as a ramp: run on toward a tint of the lightest color.
+  if (top[0] - base[0] < 0.35) stops.push([0.97, top[1] * 0.2, top[2] * 0.2]);
 
   const lo = stops[0][0];
   const hi = stops[stops.length - 1][0];
-  if (hi - lo < 0.45) return null;
-
   const at = (L: number): Lab => {
     let i = 0;
     while (i < stops.length - 2 && stops[i + 1][0] < L) i++;
@@ -91,13 +106,15 @@ export function logoRamp(hexes: string[]): LogoRamp | null {
     return [L, p[1] + (q[1] - p[1]) * f, p[2] + (q[2] - p[2]) * f];
   };
 
-  return [
-    toHex(stops[0]),
-    ...Array.from({ length: BAND_COUNT }, (_, i) =>
-      toHex(at(lo + (hi - lo) * (0.04 + 0.96 * (i / (BAND_COUNT - 1)) ** 1.7))),
-    ),
-  ];
+  const bands = Array.from({ length: BAND_COUNT }, (_, i) =>
+    toHex(at(lo + (hi - lo) * (0.04 + 0.96 * (i / (BAND_COUNT - 1)) ** 1.7))),
+  );
+  const lightest = [...unique].sort((x, y) => oklch(y).l - oklch(x).l)[0];
+  // The wordmark runs over the ground and the first few bands.
+  const ink = contrast(lightest, ground) >= 4.5 && contrast(lightest, bands[3]) >= 3 ? lightest : INK;
+
+  return { ground, bands, ink };
 }
 
-/** The monochrome ramp of the original artwork. */
-export const MONO = logoRamp(['#0F0F0F', '#E3E3E3'])!;
+/** The monochrome look of the original artwork. */
+export const MONO = logoRamp(['#0F0F0F', '#E3E3E3']);
