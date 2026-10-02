@@ -1,0 +1,15 @@
+{
+  "name": "cores",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "palettes": "node scripts/build-palettes.mjs",
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "astro": "^7.3.5"
+  }
+}

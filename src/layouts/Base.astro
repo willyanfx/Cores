@@ -1,0 +1,57 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = 'A collection of color palettes with hex values, contrast checks and ready-to-paste exports.' } =
+  Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href={`${base}/favicon.svg`} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700;800&display=swap"
+    />
+  </head>
+  <body>
+    <slot />
+    <div class="toast" role="status" aria-live="polite" id="toast"><i></i><span></span></div>
+    <script>
+      // Any element with data-copy="value" copies on click and reports it in the toast.
+      const toast = document.getElementById('toast')!;
+      let timer: number | undefined;
+      document.addEventListener('click', async (e) => {
+        const el = (e.target as HTMLElement).closest<HTMLElement>('[data-copy]');
+        if (!el) return;
+        e.preventDefault();
+        const value = el.dataset.copy!;
+        try {
+          await navigator.clipboard.writeText(value);
+        } catch {
+          return;
+        }
+        const swatch = toast.querySelector('i')!;
+        const color = el.dataset.swatch;
+        swatch.style.display = color ? '' : 'none';
+        if (color) swatch.style.background = color;
+        toast.querySelector('span')!.textContent = `Copied ${el.dataset.label ?? value}`;
+        toast.setAttribute('data-show', '');
+        clearTimeout(timer);
+        timer = window.setTimeout(() => toast.removeAttribute('data-show'), 1600);
+      });
+    </script>
+  </body>
+</html>

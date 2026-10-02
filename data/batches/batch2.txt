@@ -1,0 +1,23 @@
+palettes_base/G-2b-AYXwAAQnUe.png
+palettes_base/G1In8D_WQAEBbVw.jpeg
+palettes_base/G2A-Gv8XQAAYe5a.jpeg
+palettes_base/G3mSuyqW0AA04OS.jpeg
+palettes_base/G5ZFzq6WMAAz6VW.jpeg
+palettes_base/G7-KtRFWsAIDOwj.jpeg
+palettes_base/G9gXnZeWUAAGibC.jpeg
+palettes_base/G_Aqon8W4AEwXJh.png
+palettes_base/Gb7bswubwAAa3FT.jpeg
+palettes_base/GkPltCiWMAAC9TH.jpeg
+palettes_base/GmPcGeeWMAA1ENm.jpeg
+palettes_base/GnEQGwmWcAAQxeu.jpeg
+palettes_base/GocqEerXoAADTlG.png
+palettes_base/GptmWvqXQAI0lVW.jpeg
+palettes_base/Gu3HctjWwAAHSdf.jpeg
+palettes_base/Gv9VHQtWMAAMmVB.jpeg
+palettes_base/GxRUqI3XgAAp6AA.jpeg
+palettes_base/GyT2yVPX0AY7vOF.jpeg
+palettes_base/HBG8lnjbAAAZ66U.jpeg
+palettes_base/HD_8gWebEAAynUp.jpeg
+palettes_base/Summit 1 - Color Scheme.jpg
+reference/GTaqr1DagAYAoHk.png
+reference/GxvvAhQXkAAF-kF.jpeg

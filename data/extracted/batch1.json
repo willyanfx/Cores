@@ -1,0 +1,1608 @@
+[
+  {
+    "source": "palettes_base/2d2f0ea8f5116ccc75bb6583b0d3fe7f.webp",
+    "index": 0,
+    "title": "Velvety Brand System",
+    "code": null,
+    "credit": null,
+    "colors": [
+      {
+        "hex": "#101C10",
+        "name": "Primary 100",
+        "role": "text"
+      },
+      {
+        "hex": "#213721",
+        "name": "Primary 80",
+        "role": "primary"
+      },
+      {
+        "hex": "#496839",
+        "name": "Primary 60",
+        "role": "primary"
+      },
+      {
+        "hex": "#C8D8C0",
+        "name": "Primary 40",
+        "role": "surface"
+      },
+      {
+        "hex": "#E4ECE0",
+        "name": "Primary 20",
+        "role": "background"
+      },
+      {
+        "hex": "#213721",
+        "name": "Neutral 100",
+        "role": "text"
+      },
+      {
+        "hex": "#3C5E39",
+        "name": "Neutral 80",
+        "role": null
+      },
+      {
+        "hex": "#617C5F",
+        "name": "Neutral 60",
+        "role": null
+      },
+      {
+        "hex": "#899F87",
+        "name": "Neutral 40",
+        "role": null
+      },
+      {
+        "hex": "#C7D1C6",
+        "name": "Neutral 20",
+        "role": null
+      },
+      {
+        "hex": "#F2F6EF",
+        "name": "Neutral 0",
+        "role": "background"
+      }
+    ],
+    "tags": [
+      "green",
+      "earthy",
+      "muted",
+      "natural",
+      "minimal",
+      "brand"
+    ],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/G0kyj84WEAAjKJR.jpeg",
+    "index": 0,
+    "title": "Cottage Warmth",
+    "code": "MP210",
+    "credit": null,
+    "colors": [
+      {
+        "hex": "#F7F7F7",
+        "name": "Lynx White",
+        "role": "background"
+      },
+      {
+        "hex": "#D5C6B4",
+        "name": "Pastel Sand",
+        "role": "surface"
+      },
+      {
+        "hex": "#DE9C52",
+        "name": "Honeycomb Yellow",
+        "role": "accent"
+      },
+      {
+        "hex": "#202030",
+        "name": "Black Howl",
+        "role": "text"
+      },
+      {
+        "hex": "#A85846",
+        "name": "Cottage Spice",
+        "role": "primary"
+      },
+      {
+        "hex": "#3C3748",
+        "name": "Martinique",
+        "role": "text"
+      }
+    ],
+    "tags": [
+      "warm",
+      "earthy",
+      "muted",
+      "neutral",
+      "dark",
+      "retro"
+    ],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/G20_XZjWwAAl9wQ.jpeg",
+    "index": 0,
+    "title": "Stage Ocean",
+    "code": "MP218",
+    "credit": null,
+    "colors": [
+      {
+        "hex": "#F4F5FA",
+        "name": "White Solid",
+        "role": "background"
+      },
+      {
+        "hex": "#DACFBA",
+        "name": "Toasted Almond",
+        "role": "surface"
+      },
+      {
+        "hex": "#FFC100",
+        "name": "Center Stage",
+        "role": "accent"
+      },
+      {
+        "hex": "#3D9973",
+        "name": "Ocean Green",
+        "role": "primary"
+      },
+      {
+        "hex": "#192961",
+        "name": "Schiava Blue",
+        "role": "text"
+      },
+      {
+        "hex": "#111122",
+        "name": "Corbeau",
+        "role": "text"
+      }
+    ],
+    "gradients": [
+      [
+        "#FFC100",
+        "#3D9973"
+      ]
+    ],
+    "tags": [
+      "warm",
+      "vibrant",
+      "blue",
+      "green",
+      "gradient",
+      "bold"
+    ],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/G3mRzs6WcAAoZ5R.jpeg",
+    "index": 0,
+    "title": "Grey Monochrome Ramp",
+    "code": null,
+    "credit": null,
+    "colors": [
+      {
+        "hex": "#FCFCFD",
+        "name": null,
+        "role": "background"
+      },
+      {
+        "hex": "#F8FAFC",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#EEF2F6",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#E3E8EF",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#CDD5DF",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#9AA4B2",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#697586",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#4B5565",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#364152",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#202939",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#121926",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#0D121C",
+        "name": null,
+        "role": "text"
+      }
+    ],
+    "tags": [
+      "monochrome",
+      "neutral",
+      "dark",
+      "minimal",
+      "muted"
+    ],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/G3mRzs6WcAAoZ5R.jpeg",
+    "index": 1,
+    "title": "Teal Green Ramp",
+    "code": null,
+    "credit": null,
+    "colors": [
+      {
+        "hex": "#F7FCFC",
+        "name": null,
+        "role": "background"
+      },
+      {
+        "hex": "#EFFAF9",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#E0F6F2",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#B1E7DF",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#7DD7C9",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#2ED387",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#15B79E",
+        "name": null,
+        "role": "primary"
+      },
+      {
+        "hex": "#129884",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#0E7A69",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#0B5C4F",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#073D35",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#0A2926",
+        "name": null,
+        "role": "text"
+      }
+    ],
+    "tags": [
+      "green",
+      "teal",
+      "cool",
+      "minimal",
+      "muted"
+    ],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/G3mRzs6WcAAoZ5R.jpeg",
+    "index": 2,
+    "title": "Light Blue Ramp",
+    "code": null,
+    "credit": null,
+    "colors": [
+      {
+        "hex": "#F5F8FF",
+        "name": null,
+        "role": "background"
+      },
+      {
+        "hex": "#F0F9FF",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#E0F2FE",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#B9E6FE",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#7CD4FD",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#368BFA",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#0BA5EC",
+        "name": null,
+        "role": "primary"
+      },
+      {
+        "hex": "#0086C9",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#026AA2",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#065986",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#0B4A6F",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#062C41",
+        "name": null,
+        "role": "text"
+      }
+    ],
+    "tags": [
+      "blue",
+      "cool",
+      "minimal",
+      "muted"
+    ],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/G3mRzs6WcAAoZ5R.jpeg",
+    "index": 3,
+    "title": "Aqua Blue Ramp",
+    "code": null,
+    "credit": null,
+    "colors": [
+      {
+        "hex": "#F5F8FF",
+        "name": null,
+        "role": "background"
+      },
+      {
+        "hex": "#EFF4FF",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#D1E0FF",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#B2CCFF",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#84ADFF",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#528BFF",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#2970FF",
+        "name": null,
+        "role": "primary"
+      },
+      {
+        "hex": "#155EEF",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#004EEB",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#0040C1",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#00359E",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#002266",
+        "name": null,
+        "role": "text"
+      }
+    ],
+    "tags": [
+      "blue",
+      "vibrant",
+      "cool",
+      "minimal"
+    ],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/G5ZF2wtXQAA0gJu.jpeg",
+    "index": 0,
+    "title": "Sunlit Compass",
+    "code": "MP227",
+    "credit": "@AlexCristache",
+    "colors": [
+      {
+        "hex": "#2C3449",
+        "name": null,
+        "role": "background"
+      },
+      {
+        "hex": "#EEB347",
+        "name": null,
+        "role": "accent"
+      },
+      {
+        "hex": "#368691",
+        "name": null,
+        "role": "primary"
+      },
+      {
+        "hex": "#8B6D44",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#24475B",
+        "name": null,
+        "role": null
+      }
+    ],
+    "tags": [
+      "dark",
+      "warm",
+      "teal",
+      "earthy",
+      "retro",
+      "muted"
+    ],
+    "duplicate_of": null,
+    "confidence": "sampled"
+  },
+  {
+    "source": "palettes_base/G5pm7pjWQAAzTz6.jpeg",
+    "index": 0,
+    "title": "Forest Warmth",
+    "code": "MP228",
+    "credit": "@AlexCristache",
+    "colors": [
+      {
+        "hex": "#A36B4B",
+        "name": "Hazel",
+        "role": "accent"
+      },
+      {
+        "hex": "#162825",
+        "name": "Wet Foliage",
+        "role": "text"
+      },
+      {
+        "hex": "#334D41",
+        "name": "Pine Needle",
+        "role": "primary"
+      },
+      {
+        "hex": "#ABB486",
+        "name": "Great Green",
+        "role": "surface"
+      },
+      {
+        "hex": "#FBF5F0",
+        "name": "Silver Bird",
+        "role": "background"
+      },
+      {
+        "hex": "#DFD4C4",
+        "name": "Wheat Sheaf",
+        "role": "surface"
+      }
+    ],
+    "tags": [
+      "earthy",
+      "green",
+      "warm",
+      "natural",
+      "muted",
+      "dark"
+    ],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/G9aU888XoAASmkh.jpeg",
+    "index": 0,
+    "title": "Tiber Green",
+    "code": null,
+    "credit": null,
+    "colors": [
+      {
+        "hex": "#06392F",
+        "name": "tiber",
+        "role": "primary"
+      }
+    ],
+    "tags": [
+      "green",
+      "dark",
+      "earthy",
+      "minimal",
+      "monochrome",
+      "natural"
+    ],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GVq57EVWIAA5kpF.jpeg",
+    "index": 0,
+    "title": "Lava Smoothie Ramp",
+    "code": "No. 101",
+    "credit": "@AlexCristache",
+    "colors": [
+      {
+        "hex": "#FCF2EF",
+        "name": null,
+        "role": "background"
+      },
+      {
+        "hex": "#F3CFC4",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#E69780",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#E56C48",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#D04014",
+        "name": null,
+        "role": "primary"
+      },
+      {
+        "hex": "#A23210",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#85290D",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#6A200A",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#531A08",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#421406",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#2D0E04",
+        "name": null,
+        "role": "text"
+      }
+    ],
+    "tags": [
+      "warm",
+      "red",
+      "earthy",
+      "vibrant",
+      "muted"
+    ],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GVq57EVWIAA5kpF.jpeg",
+    "index": 1,
+    "title": "Lusty Lavender Ramp",
+    "code": "No. 101",
+    "credit": "@AlexCristache",
+    "colors": [
+      {
+        "hex": "#F6F3F9",
+        "name": null,
+        "role": "background"
+      },
+      {
+        "hex": "#DFD2EB",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#BBA0D4",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#A581C6",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#8D5EB7",
+        "name": null,
+        "role": "primary"
+      },
+      {
+        "hex": "#6D498E",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#5A3C74",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#472F5C",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#382548",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#2B1D38",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#1D1326",
+        "name": null,
+        "role": "text"
+      }
+    ],
+    "tags": [
+      "purple",
+      "cool",
+      "pastel",
+      "muted",
+      "dark"
+    ],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GVq57EVWIAA5kpF.jpeg",
+    "index": 2,
+    "title": "Azulado Ramp",
+    "code": "No. 101",
+    "credit": "@AlexCristache",
+    "colors": [
+      {
+        "hex": "#F4F3F9",
+        "name": null,
+        "role": "background"
+      },
+      {
+        "hex": "#D7D4ED",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#A9A5D9",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#8E88CD",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#6F68BD",
+        "name": null,
+        "role": "primary"
+      },
+      {
+        "hex": "#554EA2",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#453F88",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#37326C",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#2B2659",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#211D49",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#16142F",
+        "name": null,
+        "role": "text"
+      }
+    ],
+    "tags": [
+      "blue",
+      "purple",
+      "cool",
+      "muted",
+      "dark"
+    ],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GVq57EVWIAA5kpF.jpeg",
+    "index": 3,
+    "title": "Soft Gray Ramp",
+    "code": "No. 101",
+    "credit": "@AlexCristache",
+    "colors": [
+      {
+        "hex": "#F3F3F3",
+        "name": null,
+        "role": "background"
+      },
+      {
+        "hex": "#D7D7D7",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#ABABAB",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#8F8F8F",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#727272",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#595959",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#494949",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#2D2D2D",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#2B2659",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#232323",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#171717",
+        "name": null,
+        "role": "text"
+      }
+    ],
+    "tags": [
+      "monochrome",
+      "neutral",
+      "minimal",
+      "dark",
+      "muted"
+    ],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GaGOdyqXsAAmYtZ.jpeg",
+    "index": 0,
+    "title": "Autumn Foliage",
+    "code": "MP117",
+    "credit": null,
+    "colors": [
+      {
+        "hex": "#F8F4ED",
+        "name": "Crystal Cut",
+        "role": "background"
+      },
+      {
+        "hex": "#E0D6C8",
+        "name": "Kestrel White",
+        "role": "surface"
+      },
+      {
+        "hex": "#EB7B07",
+        "name": "Pumpkin Cat",
+        "role": "accent"
+      },
+      {
+        "hex": "#181B26",
+        "name": "Coarse Wool",
+        "role": "text"
+      },
+      {
+        "hex": "#677F70",
+        "name": "Ecological",
+        "role": "primary"
+      },
+      {
+        "hex": "#060609",
+        "name": "Halloween Sateen",
+        "role": "text"
+      }
+    ],
+    "tags": [
+      "warm",
+      "earthy",
+      "dark",
+      "natural",
+      "muted",
+      "green"
+    ],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/Gj__ramXsAAHZ__.jpeg",
+    "index": 0,
+    "title": "Desert Bloom",
+    "code": "MP151",
+    "credit": null,
+    "colors": [
+      {
+        "hex": "#F9F6F4",
+        "name": "Vanilla Latte",
+        "role": "background"
+      },
+      {
+        "hex": "#E6BE9C",
+        "name": "Bronze Sand",
+        "role": "surface"
+      },
+      {
+        "hex": "#5B4148",
+        "name": "Bruised Burgundy",
+        "role": "primary"
+      },
+      {
+        "hex": "#E8EAEA",
+        "name": "Superwhite",
+        "role": "surface"
+      },
+      {
+        "hex": "#648D95",
+        "name": "Oarsman Blue",
+        "role": "accent"
+      },
+      {
+        "hex": "#92555B",
+        "name": "Mesa Red",
+        "role": "primary"
+      }
+    ],
+    "tags": [
+      "warm",
+      "muted",
+      "pastel",
+      "earthy",
+      "blue",
+      "minimal"
+    ],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GldAC1LW8AI7ple.jpeg",
+    "index": 0,
+    "title": "Forest Gold",
+    "code": "MP155",
+    "credit": "@AlexCristache",
+    "colors": [
+      {
+        "hex": "#FFF8EE",
+        "name": "Satin Purse",
+        "role": "background"
+      },
+      {
+        "hex": "#F6D06E",
+        "name": "Yellow Tulip",
+        "role": "accent"
+      },
+      {
+        "hex": "#4A3C62",
+        "name": "Mulberry Purple",
+        "role": "primary"
+      },
+      {
+        "hex": "#CBA792",
+        "name": "Primal",
+        "role": "surface"
+      },
+      {
+        "hex": "#245336",
+        "name": "Kaitoke Green",
+        "role": "primary"
+      },
+      {
+        "hex": "#112A12",
+        "name": "Nori Green",
+        "role": "text"
+      }
+    ],
+    "tags": [
+      "warm",
+      "green",
+      "earthy",
+      "dark",
+      "vibrant",
+      "muted"
+    ],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GnDk3KrXEAA2qo3.jpeg",
+    "index": 0,
+    "title": "Twilight Shore",
+    "code": "MP162",
+    "credit": null,
+    "colors": [
+      {
+        "hex": "#F2F3F4",
+        "name": "Anti-Flash White",
+        "role": "background"
+      },
+      {
+        "hex": "#0F2D4D",
+        "name": "Midnight Ocean",
+        "role": "text"
+      },
+      {
+        "hex": "#174871",
+        "name": "Hopi Blue Corn",
+        "role": "primary"
+      },
+      {
+        "hex": "#DED1C6",
+        "name": "Pearl Bush",
+        "role": "surface"
+      },
+      {
+        "hex": "#A77693",
+        "name": "Poise",
+        "role": "accent"
+      },
+      {
+        "hex": "#985672",
+        "name": "Pink Tulip",
+        "role": "accent"
+      }
+    ],
+    "gradients": [
+      [
+        "#A77693",
+        "#174871"
+      ]
+    ],
+    "tags": [
+      "cool",
+      "blue",
+      "muted",
+      "dark",
+      "pastel",
+      "gradient"
+    ],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GocqEbLXAAAToJZ.jpeg",
+    "index": 0,
+    "title": "Linen Noir",
+    "code": null,
+    "credit": null,
+    "colors": [
+      {
+        "hex": "#F8EBE3",
+        "name": "Linen",
+        "role": "background"
+      },
+      {
+        "hex": "#161619",
+        "name": "Night",
+        "role": "text"
+      },
+      {
+        "hex": "#2B2D42",
+        "name": "Space Cadet",
+        "role": "primary"
+      },
+      {
+        "hex": "#838196",
+        "name": "Cool gray",
+        "role": "surface"
+      },
+      {
+        "hex": "#0A0B06",
+        "name": "Smoky",
+        "role": "text"
+      }
+    ],
+    "tags": [
+      "dark",
+      "minimal",
+      "neutral",
+      "cool",
+      "muted"
+    ],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GpN-6awWIAAeJKu.jpeg",
+    "index": 0,
+    "title": "Nordic Fog",
+    "code": "MP169",
+    "credit": "@AlexCristache",
+    "colors": [
+      {
+        "hex": "#EEEAE2",
+        "name": "Solid Opal",
+        "role": "background"
+      },
+      {
+        "hex": "#CAC2BD",
+        "name": "Chicago Fog",
+        "role": "surface"
+      },
+      {
+        "hex": "#C1C6BF",
+        "name": "Nickel Plate",
+        "role": "surface"
+      },
+      {
+        "hex": "#BCC7CB",
+        "name": "Gris N\u00e1utico",
+        "role": "surface"
+      },
+      {
+        "hex": "#C8C1C9",
+        "name": "Lavender Vapor",
+        "role": "surface"
+      },
+      {
+        "hex": "#2D3C44",
+        "name": "Sea Deep",
+        "role": "text"
+      }
+    ],
+    "gradients": [
+      [
+        "#EEEAE2",
+        "#2D3C44"
+      ]
+    ],
+    "tags": [
+      "cool",
+      "muted",
+      "minimal",
+      "neutral",
+      "pastel",
+      "gradient"
+    ],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GtksbWsbwAAn4Yg.jpeg",
+    "index": 0,
+    "title": "Electric Retro",
+    "code": "MP185",
+    "credit": null,
+    "colors": [
+      {
+        "hex": "#F8F3F6",
+        "name": "Abalone",
+        "role": "background"
+      },
+      {
+        "hex": "#4A1207",
+        "name": "Bean",
+        "role": "text"
+      },
+      {
+        "hex": "#FF6B00",
+        "name": "Spooky Tangerine",
+        "role": "accent"
+      },
+      {
+        "hex": "#222255",
+        "name": "Spacescape",
+        "role": "primary"
+      },
+      {
+        "hex": "#0091B3",
+        "name": "Cool Tide",
+        "role": "primary"
+      },
+      {
+        "hex": "#EBE734",
+        "name": "Lime Time",
+        "role": "accent"
+      }
+    ],
+    "tags": [
+      "vibrant",
+      "bold",
+      "retro",
+      "neon",
+      "dark",
+      "warm"
+    ],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/Gv9VDUzXoAAvNuv.jpeg",
+    "index": 0,
+    "title": "Golden Hour",
+    "code": "MP193",
+    "credit": "@AlexCristache",
+    "colors": [
+      {
+        "hex": "#F5F2ED",
+        "name": null,
+        "role": "background"
+      },
+      {
+        "hex": "#F2BC6B",
+        "name": null,
+        "role": "accent"
+      },
+      {
+        "hex": "#F1B634",
+        "name": null,
+        "role": "primary"
+      },
+      {
+        "hex": "#E76615",
+        "name": null,
+        "role": "accent"
+      }
+    ],
+    "gradients": [
+      [
+        "#F5F2ED",
+        "#EA8A2B"
+      ]
+    ],
+    "tags": [
+      "warm",
+      "vibrant",
+      "earthy",
+      "gradient",
+      "minimal"
+    ],
+    "duplicate_of": null,
+    "confidence": "sampled"
+  },
+  {
+    "source": "palettes_base/GwvO5YNXkAA779R.jpeg",
+    "index": 0,
+    "title": "Obsidian Green",
+    "code": "7771C",
+    "credit": null,
+    "colors": [
+      {
+        "hex": "#344532",
+        "name": "OBSIDIAN GREEN",
+        "role": "primary"
+      }
+    ],
+    "tags": [
+      "green",
+      "dark",
+      "earthy",
+      "minimal",
+      "monochrome",
+      "natural"
+    ],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/GyHRphlWQAAbW7c.jpeg",
+    "index": 0,
+    "title": "Arctic Sea",
+    "code": "646C",
+    "credit": "@KFLETCH",
+    "colors": [
+      {
+        "hex": "#5B87B1",
+        "name": "ARCTIC SEA",
+        "role": "primary"
+      }
+    ],
+    "tags": [
+      "blue",
+      "cool",
+      "muted",
+      "minimal",
+      "monochrome"
+    ],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/Gzw7tDfWsAAXUlz.jpeg",
+    "index": 0,
+    "title": "Ember Smoke",
+    "code": "MP207",
+    "credit": null,
+    "colors": [
+      {
+        "hex": "#F5F5F5",
+        "name": "White Smoke",
+        "role": "background"
+      },
+      {
+        "hex": "#422329",
+        "name": "Cherry Black",
+        "role": "text"
+      },
+      {
+        "hex": "#E1583F",
+        "name": "Tiger Lily",
+        "role": "accent"
+      },
+      {
+        "hex": "#B6DBBF",
+        "name": "Ice Mist",
+        "role": "surface"
+      },
+      {
+        "hex": "#A91F29",
+        "name": "Red-Hot Mama",
+        "role": "primary"
+      },
+      {
+        "hex": "#E8E6D9",
+        "name": "Prairie Winds",
+        "role": "background"
+      }
+    ],
+    "tags": [
+      "warm",
+      "red",
+      "earthy",
+      "muted",
+      "vibrant",
+      "bold"
+    ],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/HDTCbemXkAAZ3GV.jpeg",
+    "index": 0,
+    "title": "Industrial Ember",
+    "code": "MP020",
+    "credit": null,
+    "colors": [
+      {
+        "hex": "#DAD8CF",
+        "name": "Bright Sandstone",
+        "role": "background"
+      },
+      {
+        "hex": "#B83312",
+        "name": "Red Gravy",
+        "role": "primary"
+      },
+      {
+        "hex": "#1F282E",
+        "name": "Web Cobblestone",
+        "role": "text"
+      },
+      {
+        "hex": "#E4E3DC",
+        "name": "Dusty Cotton",
+        "role": "background"
+      },
+      {
+        "hex": "#FF4E20",
+        "name": "\u014ctan Red",
+        "role": "accent"
+      },
+      {
+        "hex": "#414E58",
+        "name": "Midnight Smoke",
+        "role": "surface"
+      }
+    ],
+    "tags": [
+      "warm",
+      "red",
+      "dark",
+      "earthy",
+      "bold",
+      "minimal"
+    ],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "palettes_base/HFQ94UWWMAARBLW.jpeg",
+    "index": 0,
+    "title": "Deep Blue Gradients",
+    "code": null,
+    "credit": null,
+    "colors": [
+      {
+        "hex": "#00041C",
+        "name": null,
+        "role": "background"
+      },
+      {
+        "hex": "#0026C0",
+        "name": null,
+        "role": "primary"
+      },
+      {
+        "hex": "#1E76F6",
+        "name": null,
+        "role": "accent"
+      },
+      {
+        "hex": "#001B7F",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#0045D5",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#349DFF",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#9DD5FA",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#85C8FC",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#BEE4FC",
+        "name": null,
+        "role": null
+      },
+      {
+        "hex": "#FEFEFF",
+        "name": null,
+        "role": "background"
+      },
+      {
+        "hex": "#000000",
+        "name": null,
+        "role": "text"
+      },
+      {
+        "hex": "#FFFFFF",
+        "name": null,
+        "role": "background"
+      }
+    ],
+    "gradients": [
+      [
+        "#000623",
+        "#217DF0"
+      ],
+      [
+        "#032BC3",
+        "#AADAFC"
+      ]
+    ],
+    "tags": [
+      "blue",
+      "dark",
+      "vibrant",
+      "gradient",
+      "cool",
+      "minimal"
+    ],
+    "duplicate_of": null,
+    "confidence": "printed"
+  },
+  {
+    "source": "reference/9a6a4ebb45505e2488f06026a74de5ed.webp",
+    "index": 0,
+    "title": "Insecto Brand Green",
+    "code": null,
+    "credit": null,
+    "colors": [
+      {
+        "hex": "#072107",
+        "name": null,
+        "role": "background"
+      },
+      {
+        "hex": "#397023",
+        "name": null,
+        "role": "primary"
+      },
+      {
+        "hex": "#62AF63",
+        "name": null,
+        "role": "accent"
+      },
+      {
+        "hex": "#DEE0C9",
+        "name": null,
+        "role": "surface"
+      },
+      {
+        "hex": "#FCFFF8",
+        "name": null,
+        "role": "background"
+      }
+    ],
+    "tags": [
+      "green",
+      "natural",
+      "earthy",
+      "vibrant",
+      "brand",
+      "minimal"
+    ],
+    "duplicate_of": null,
+    "confidence": "sampled"
+  },
+  {
+    "source": "reference/Gv7crULWEAAEafY.jpeg",
+    "index": 0,
+    "title": "Gradient Noir",
+    "code": null,
+    "credit": null,
+    "colors": [
+      {
+        "hex": "#EFF3F6",
+        "name": null,
+        "role": "background"
+      },
+      {
+        "hex": "#CFD3D6",
+        "name": null,
+        "role": "surface"
+      },
+      {
+        "hex": "#232527",
+        "name": null,
+        "role": "text"
+      },
+      {
+        "hex": "#111417",
+        "name": null,
+        "role": "text"
+      }
+    ],
+    "tags": [
+      "dark",
+      "monochrome",
+      "minimal",
+      "neutral",
+      "muted"
+    ],
+    "duplicate_of": null,
+    "confidence": "sampled"
+  }
+]

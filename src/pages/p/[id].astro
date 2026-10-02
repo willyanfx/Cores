@@ -1,0 +1,571 @@
+---
+import Base from '../../layouts/Base.astro';
+import { contrast, formatOklch, formatRgb, inkOn, slugify, wcagLevel } from '../../lib/color';
+import { assignRoles, getPalettes, href } from '../../lib/palettes';
+
+export async function getStaticPaths() {
+  const infos = await getPalettes();
+  return infos.map((info, i) => ({
+    params: { id: info.palette.id },
+    props: {
+      info,
+      prev: infos[(i - 1 + infos.length) % infos.length].palette,
+      next: infos[(i + 1) % infos.length].palette,
+    },
+  }));
+}
+
+const { info, prev, next } = Astro.props;
+const { title, code, credit, colors, gradients, tags, confidence, origin } = info.palette.data;
+const roles = assignRoles(colors);
+const home = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/`;
+
+const varName = (c: (typeof colors)[number], i: number) => slugify(c.name ?? '') || `color-${i + 1}`;
+const names = colors.map(varName).map((n, i, all) => (all.indexOf(n) === i ? n : `${n}-${i + 1}`));
+const prefix = slugify(title);
+
+const exports = {
+  css: `:root {\n${colors.map((c, i) => `  --${prefix}-${names[i]}: ${c.hex};`).join('\n')}\n}`,
+  tailwind: `@theme {\n${colors.map((c, i) => `  --color-${prefix}-${names[i]}: ${c.hex};`).join('\n')}\n}`,
+  json: JSON.stringify(
+    { name: title, colors: Object.fromEntries(colors.map((c, i) => [names[i], c.hex])) },
+    null,
+    2,
+  ),
+  hex: colors.map((c) => c.hex).join(', '),
+};
+
+const pairs = colors.flatMap((a, i) =>
+  colors.slice(i + 1).map((b) => {
+    const ratio = contrast(a.hex, b.hex);
+    return { a, b, ratio, level: wcagLevel(ratio) };
+  }),
+);
+pairs.sort((x, y) => y.ratio - x.ratio);
+---
+
+<Base title={`${title} · Cores`} description={`${title}: ${colors.map((c) => c.hex).join(' ')}`}>
+  <nav class="wrap top">
+    <a href={home}>Cores</a>
+    <div class="pager">
+      <a href={href(prev.id)} rel="prev">Previous</a>
+      <a href={href(next.id)} rel="next">Next</a>
+    </div>
+  </nav>
+
+  <header class="wrap head">
+    <h1>{title}</h1>
+    <dl class="facts">
+      {code && (<div><dt>Code</dt><dd>{code}</dd></div>)}
+      {credit && (<div><dt>Credit</dt><dd>{credit}</dd></div>)}
+      <div><dt>Type</dt><dd>{origin === 'brand' ? 'Brand system' : 'Palette'}</dd></div>
+      <div><dt>Values</dt><dd>{confidence === 'printed' ? 'From printed hex codes' : 'Sampled from the image'}</dd></div>
+    </dl>
+  </header>
+
+  <section class="swatches" aria-label="Colors">
+    {
+      colors.map((c) => (
+        <div class="swatch" style={`--c:${c.hex};--on:${inkOn(c.hex)}`}>
+          <button type="button" class="fill" data-copy={c.hex} data-swatch={c.hex} aria-label={`Copy ${c.hex}`} />
+          <div class="label">
+            {c.name && <p class="name">{c.name}</p>}
+            <button type="button" class="hex big" data-copy={c.hex} data-swatch={c.hex}>
+              {c.hex}
+            </button>
+            <button type="button" class="alt" data-copy={formatRgb(c.hex)} data-swatch={c.hex}>
+              {formatRgb(c.hex)}
+            </button>
+            <button type="button" class="alt" data-copy={formatOklch(c.hex)} data-swatch={c.hex}>
+              {formatOklch(c.hex)}
+            </button>
+          </div>
+        </div>
+      ))
+    }
+  </section>
+
+  <main class="wrap body">
+    {
+      gradients.length > 0 && (
+        <section class="block">
+          <h2>Gradients</h2>
+          <div class="gradients">
+            {gradients.map((g) => {
+              const css = `linear-gradient(90deg in oklab, ${g.join(', ')})`;
+              return (
+                <button type="button" class="gradient" style={`background:${css}`} data-copy={css} data-label="gradient">
+                  <span>{g.join(' to ')}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )
+    }
+
+    <section class="block">
+      <h2>In use</h2>
+      <p class="note">Lightest color as the background, the highest-contrast color as text, the most saturated as the accent.</p>
+      <div
+        class="mock"
+        style={`--bg:${roles.background};--fg:${roles.text};--accent:${roles.accent};--on-accent:${inkOn(roles.accent)};--surface:${roles.surface};--on-surface:${inkOn(roles.surface)}`}
+      >
+        <div class="mock-copy">
+          <p class="mock-kicker">{colors.length} colors</p>
+          <p class="mock-title">{title}</p>
+          <p class="mock-text">A short paragraph set in the text color, so you can judge how the palette reads at body size.</p>
+          <span class="mock-button">Get started</span>
+        </div>
+        <div class="mock-panel">
+          {colors
+            .filter((c) => c.hex !== roles.background)
+            .map((c) => <i style={`background:${c.hex}`} />)}
+        </div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2>Contrast</h2>
+      <p class="note">Every pair, highest contrast first. WCAG asks for 4.5:1 for body text and 3:1 for large text.</p>
+      <ul class="pairs">
+        {
+          pairs.map(({ a, b, ratio, level }) => (
+            <li class:list={{ fail: !level }}>
+              <span class="pair" style={`background:${a.hex};color:${b.hex}`}>
+                Aa
+              </span>
+              <span class="ratio">{ratio.toFixed(2)}:1</span>
+              <span class="level">{level ?? 'Decorative only'}</span>
+              <span class="codes hex">
+                {a.hex} on {b.hex}
+              </span>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <section class="block">
+      <h2>Code</h2>
+      <div class="tabs" role="tablist" aria-label="Export format">
+        <button role="tab" aria-selected="true" data-tab="css">CSS variables</button>
+        <button role="tab" aria-selected="false" data-tab="tailwind">Tailwind v4</button>
+        <button role="tab" aria-selected="false" data-tab="json">JSON</button>
+        <button role="tab" aria-selected="false" data-tab="hex">Hex list</button>
+      </div>
+      {
+        Object.entries(exports).map(([k, v], i) => (
+          <div class="code" role="tabpanel" data-panel={k} hidden={i > 0}>
+            <pre><code>{v}</code></pre>
+            <button type="button" class="copy" data-copy={v} data-label={k === 'hex' ? 'hex list' : `${k} code`}>
+              Copy
+            </button>
+          </div>
+        ))
+      }
+    </section>
+
+    {
+      tags.length > 0 && (
+        <p class="tagline">
+          {tags.map((t) => (
+            <span>{t}</span>
+          ))}
+        </p>
+      )
+    }
+  </main>
+</Base>
+
+<script>
+  const tabs = document.querySelectorAll<HTMLButtonElement>('[role=tab]');
+  tabs.forEach((tab) =>
+    tab.addEventListener('click', () => {
+      tabs.forEach((t) => t.setAttribute('aria-selected', String(t === tab)));
+      document.querySelectorAll<HTMLElement>('[data-panel]').forEach((p) => {
+        p.hidden = p.dataset.panel !== tab.dataset.tab;
+      });
+    }),
+  );
+  document.addEventListener('keydown', (e) => {
+    if (e.target instanceof HTMLInputElement || e.metaKey || e.ctrlKey) return;
+    const rel = e.key === 'ArrowLeft' ? 'prev' : e.key === 'ArrowRight' ? 'next' : null;
+    const link = rel && document.querySelector<HTMLAnchorElement>(`a[rel=${rel}]`);
+    if (link) location.href = link.href;
+  });
+</script>
+
+<style>
+  .top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-block: 1.25rem;
+    font-size: var(--step--1);
+  }
+
+  .top a {
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .top > a {
+    font-weight: 800;
+    font-size: var(--step-1);
+    letter-spacing: -0.04em;
+  }
+
+  .pager {
+    display: flex;
+    gap: 1.25rem;
+  }
+
+  .top a:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    justify-content: space-between;
+    gap: 1.5rem 3rem;
+    padding-block: clamp(1.5rem, 5vw, 3.5rem) 1.75rem;
+  }
+
+  h1 {
+    font-size: clamp(2.5rem, 7vw, 5.5rem);
+    font-weight: 800;
+    letter-spacing: -0.045em;
+    line-height: 0.92;
+    max-width: 14ch;
+  }
+
+  .facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 2rem;
+    margin: 0;
+    font-size: var(--step--1);
+  }
+
+  .facts dt {
+    color: var(--muted);
+  }
+
+  .facts dd {
+    margin: 0;
+    font-weight: 500;
+  }
+
+  /* Swatches: full-bleed paint chips */
+  .swatches {
+    display: flex;
+    min-height: clamp(22rem, 58vh, 36rem);
+  }
+
+  .swatch {
+    position: relative;
+    flex: 1 1 0;
+    min-width: 0;
+    background: var(--c);
+    color: var(--on);
+  }
+
+  .fill {
+    position: absolute;
+    inset: 0;
+    border: 0;
+    background: none;
+    cursor: copy;
+  }
+
+  .fill:focus-visible {
+    outline-color: var(--on);
+    outline-offset: -6px;
+  }
+
+  .label {
+    position: absolute;
+    left: clamp(0.75rem, 1.5vw, 1.25rem);
+    right: 0.5rem;
+    bottom: clamp(0.75rem, 1.5vw, 1.25rem);
+    display: grid;
+    justify-items: start;
+    gap: 0.1rem;
+    pointer-events: none;
+  }
+
+  .label button {
+    pointer-events: auto;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    cursor: copy;
+    text-align: left;
+  }
+
+  .label button:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .label button:focus-visible {
+    outline-color: var(--on);
+  }
+
+  .name {
+    font-weight: 500;
+    font-size: var(--step-0);
+    margin-bottom: 0.15rem;
+  }
+
+  .big {
+    font-size: var(--step-2);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .alt {
+    font-size: var(--step--1);
+    opacity: 0.78;
+  }
+
+  @media (max-width: 760px) {
+    .swatches {
+      flex-direction: column;
+      min-height: 0;
+    }
+    .swatch {
+      min-height: 7.5rem;
+    }
+  }
+
+  .body {
+    display: grid;
+    gap: clamp(3rem, 6vw, 5rem);
+    padding-block: clamp(2.5rem, 6vw, 4.5rem) 5rem;
+  }
+
+  .block {
+    display: grid;
+    gap: 1rem;
+  }
+
+  h2 {
+    font-size: var(--step-2);
+  }
+
+  .note {
+    color: var(--muted);
+    max-width: 62ch;
+    margin-top: -0.5rem;
+  }
+
+  .gradients {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .gradient {
+    height: 6rem;
+    border: 0;
+    border-radius: 6px;
+    display: flex;
+    align-items: flex-end;
+    padding: 0.75rem;
+    cursor: copy;
+  }
+
+  .gradient span {
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    background: rgb(0 0 0 / 0.45);
+    color: #fff;
+    font-size: var(--step--1);
+  }
+
+  /* In-use mock */
+  .mock {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    background: var(--bg);
+    color: var(--fg);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px var(--rule);
+  }
+
+  .mock-copy {
+    padding: clamp(1.5rem, 4vw, 3.5rem);
+    display: grid;
+    align-content: center;
+    justify-items: start;
+    gap: 1rem;
+  }
+
+  .mock-kicker {
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .mock-title {
+    font-size: clamp(2rem, 5vw, 3.75rem);
+    font-weight: 800;
+    letter-spacing: -0.045em;
+    line-height: 0.95;
+  }
+
+  .mock-text {
+    max-width: 40ch;
+  }
+
+  .mock-button {
+    margin-top: 0.5rem;
+    padding: 0.7rem 1.2rem;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--on-accent);
+    font-weight: 700;
+  }
+
+  .mock-panel {
+    display: grid;
+    grid-auto-rows: 1fr;
+    min-height: 18rem;
+  }
+
+  @media (max-width: 760px) {
+    .mock {
+      grid-template-columns: 1fr;
+    }
+    .mock-panel {
+      grid-auto-flow: column;
+      grid-auto-columns: 1fr;
+      min-height: 4rem;
+    }
+  }
+
+  /* Contrast pairs */
+  .pairs {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+    gap: 0.5rem;
+  }
+
+  .pairs li {
+    display: grid;
+    grid-template-columns: 3.25rem 1fr auto;
+    grid-template-areas: 'pair ratio level' 'pair codes codes';
+    align-items: center;
+    gap: 0 0.75rem;
+    padding: 0.5rem;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    background: var(--raised);
+  }
+
+  .pair {
+    grid-area: pair;
+    height: 3.25rem;
+    border-radius: 4px;
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    font-size: var(--step-1);
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.08);
+  }
+
+  .ratio {
+    grid-area: ratio;
+    font-weight: 700;
+  }
+
+  .level {
+    grid-area: level;
+    font-size: var(--step--1);
+    font-weight: 500;
+  }
+
+  .codes {
+    grid-area: codes;
+    font-size: var(--step--1);
+    color: var(--muted);
+  }
+
+  .fail .ratio,
+  .fail .level {
+    color: var(--muted);
+    font-weight: 400;
+  }
+
+  /* Code export */
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  .tabs button {
+    padding: 0.4rem 0.8rem;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: none;
+    font-size: var(--step--1);
+    cursor: pointer;
+  }
+
+  .tabs button[aria-selected='true'] {
+    border-color: var(--ink);
+    background: var(--raised);
+  }
+
+  .code {
+    position: relative;
+  }
+
+  pre {
+    margin: 0;
+    padding: 1.25rem;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    background: var(--raised);
+    overflow-x: auto;
+    font-size: var(--step--1);
+    line-height: 1.6;
+  }
+
+  .copy {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    padding: 0.35rem 0.9rem;
+    border: 0;
+    border-radius: 999px;
+    background: var(--ink);
+    color: var(--ground);
+    font-size: var(--step--1);
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .tagline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .tagline span {
+    padding: 0.2rem 0.65rem;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    font-size: var(--step--1);
+    color: var(--muted);
+  }
+</style>

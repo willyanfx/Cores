@@ -1,0 +1,139 @@
+---
+import { inkOn } from '../lib/color';
+import { href, type PaletteInfo } from '../lib/palettes';
+
+interface Props {
+  info: PaletteInfo;
+  order: number;
+}
+
+const { info, order } = Astro.props;
+const { palette, hues, leadHue, lightness } = info;
+const { title, code, colors, tags } = palette.data;
+const search = [title, code, ...colors.flatMap((c) => [c.hex, c.name]), ...tags]
+  .filter(Boolean)
+  .join(' ')
+  .toLowerCase();
+---
+
+<article
+  class="card"
+  data-search={search}
+  data-hues={hues.join(' ')}
+  data-tags={tags.join(' ')}
+  data-order={order}
+  data-origin={palette.data.origin}
+  data-hue={leadHue.toFixed(1)}
+  data-light={lightness.toFixed(3)}
+>
+  <div class="chips">
+    {
+      colors.map((c) => (
+        <button
+          type="button"
+          class="chip"
+          style={`--c:${c.hex};--on:${inkOn(c.hex)}`}
+          data-copy={c.hex}
+          data-swatch={c.hex}
+          aria-label={`Copy ${c.name ? `${c.name}, ` : ''}${c.hex}`}
+        >
+          <span class="hex">{c.hex.slice(1)}</span>
+        </button>
+      ))
+    }
+  </div>
+  <a class="meta" href={href(palette.id)}>
+    <h3>{title}</h3>
+    <span class="count">{colors.length} colors</span>
+  </a>
+</article>
+
+<style>
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .card[hidden] {
+    display: none;
+  }
+
+  .chips {
+    display: flex;
+    height: clamp(9rem, 22vw, 12.5rem);
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px var(--rule);
+  }
+
+  .chip {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0 0 0.55rem;
+    border: 0;
+    background: var(--c);
+    color: var(--on);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    cursor: copy;
+    transition: flex-grow 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .chip .hex {
+    font-size: 0.6875rem;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity 120ms ease;
+    white-space: nowrap;
+  }
+
+  .chips:hover .chip:hover,
+  .chip:focus-visible {
+    flex-grow: 2.6;
+  }
+
+  .chip:hover .hex,
+  .chip:focus-visible .hex {
+    opacity: 1;
+  }
+
+  .chip:focus-visible {
+    outline-offset: -4px;
+    outline-color: var(--on);
+  }
+
+  .meta {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    text-decoration: none;
+  }
+
+  .meta h3 {
+    font-size: var(--step-0);
+    font-weight: 500;
+    letter-spacing: -0.005em;
+  }
+
+  .meta:hover h3 {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+  }
+
+  .count {
+    color: var(--muted);
+    white-space: nowrap;
+    font-size: var(--step--1);
+  }
+
+  @media (hover: none) {
+    .chip .hex {
+      opacity: 0.85;
+      font-size: 0.5625rem;
+    }
+  }
+</style>
