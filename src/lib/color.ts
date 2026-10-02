@@ -57,7 +57,22 @@ export function formatRgb(hex: string): string {
   return `rgb(${hexToRgb(hex).join(' ')})`;
 }
 
-export const HUES = ['red', 'orange', 'yellow', 'green', 'teal', 'blue', 'purple', 'pink', 'neutral'] as const;
+/** HSL: hue 0–360, saturation and lightness 0–100. */
+export function hsl(hex: string): { h: number; s: number; l: number } {
+  const [r, g, b] = hexToRgb(hex).map((v) => v / 255);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  const d = max - min;
+  if (d === 0) return { h: 0, s: 0, l: l * 100 };
+  const s = d / (1 - Math.abs(2 * l - 1));
+  let h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  h *= 60;
+  if (h < 0) h += 360;
+  return { h, s: s * 100, l: l * 100 };
+}
+
+export const HUES =['red', 'orange', 'yellow', 'green', 'teal', 'blue', 'purple', 'pink', 'neutral'] as const;
 export type Hue = (typeof HUES)[number];
 
 export function hueFamily(hex: string): Hue {

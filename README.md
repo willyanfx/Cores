@@ -7,6 +7,7 @@ A static Astro site that collects color palettes extracted from a folder of refe
 1. **Extract.** Images in `palettes_base/` (palette cards) and `reference/` (brand moodboards) were read one by one. Printed hex codes were transcribed and checked against the pixels. Where no code was printed, colors were sampled with `scripts/colors.py`. Each batch lands in `data/extracted/batchN.json`.
 2. **Merge.** `npm run palettes` combines the batches into `src/data/palettes.json`, dropping duplicates and anything with fewer than two valid colors.
 3. **Build.** `src/content.config.ts` loads that file as the `palettes` content collection. The home page lists every palette with hue, mood and search filters. Each palette gets a page at `/p/<id>/` with color values, a contrast table, an in-use preview and CSS, Tailwind or JSON exports.
+4. **Color of the day.** `/today/` shows one named color per day as a card with its HEX, RGB, HSL and OKLCH values, plus a 1080 × 1080 PNG download. The pick is made in the browser for the visitor's local date, by walking a fixed shuffle of every named color in the collection (`getDailyColors` in `src/lib/palettes.ts`). No color repeats until the whole list has been used. `?d=YYYY-MM-DD` shows a past day.
 
 The source images are git-ignored. Only the extracted colors are published.
 
