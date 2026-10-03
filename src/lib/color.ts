@@ -104,3 +104,57 @@ export function slugify(s: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '');
 }
+
+const toGamma = (c: number) => (c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055);
+
+/** Hex for an OKLCH color, lowering chroma until it fits in sRGB. */
+export function oklchToHex(l: number, c: number, h: number): string {
+  const rad = (h * Math.PI) / 180;
+  for (let chroma = c; ; chroma = Math.max(0, chroma - 0.005)) {
+    const A = chroma * Math.cos(rad);
+    const B = chroma * Math.sin(rad);
+    const l_ = (l + 0.3963377774 * A + 0.2158037573 * B) ** 3;
+    const m_ = (l - 0.1055613458 * A - 0.0638541728 * B) ** 3;
+    const s_ = (l - 0.0894841775 * A - 1.291485548 * B) ** 3;
+    const rgb = [
+      4.0767416621 * l_ - 3.3077115913 * m_ + 0.2309699292 * s_,
+      -1.2684380046 * l_ + 2.6097574011 * m_ - 0.3413193965 * s_,
+      -0.0041960863 * l_ - 0.7034186147 * m_ + 1.707614701 * s_,
+    ];
+    if (chroma === 0 || rgb.every((v) => v >= -0.0005 && v <= 1.0005)) {
+      return (
+        '#' +
+        rgb
+          .map((v) => Math.round(Math.min(1, Math.max(0, toGamma(Math.min(1, Math.max(0, v))))) * 255))
+          .map((v) => v.toString(16).padStart(2, '0'))
+          .join('')
+          .toUpperCase()
+      );
+    }
+  }
+}
+
+/** Mix two colors in OKLab, t = 0 gives `a`, 1 gives `b`. */
+export function mix(a: string, b: string, t: number): string {
+  const x = oklch(a);
+  const y = oklch(b);
+  const ab = (o: { l: number; c: number; h: number }) => {
+    const r = (o.h * Math.PI) / 180;
+    return [o.l, o.c * Math.cos(r), o.c * Math.sin(r)];
+  };
+  const [l1, a1, b1] = ab(x);
+  const [l2, a2, b2] = ab(y);
+  const L = l1 + (l2 - l1) * t;
+  const A = a1 + (a2 - a1) * t;
+  const B = b1 + (b2 - b1) * t;
+  return oklchToHex(L, Math.hypot(A, B), (Math.atan2(B, A) * 180) / Math.PI);
+}
+
+/** `text` eased toward `bg` as far as it can go while staying readable (4.5:1) on it. */
+export function mutedFor(text: string, bg: string): string {
+  for (let t = 0.5; t > 0; t -= 0.05) {
+    const m = mix(text, bg, t);
+    if (contrast(m, bg) >= 4.5) return m;
+  }
+  return text;
+}
