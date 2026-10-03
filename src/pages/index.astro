@@ -52,7 +52,10 @@ const hasBrand = infos.some((i) => i.palette.data.origin === 'brand');
 <Base title="Cores">
   <header class="wrap masthead">
     <h1>Cores</h1>
-    <a class="daily" href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/today/`}>Color of the day</a>
+    <nav class="links">
+      <a href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/today/`}>Color of the day</a>
+      <a href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/brand/`}>Brand lab</a>
+    </nav>
   </header>
 
   <section aria-label="Every palette in the collection, ordered by hue">
@@ -355,7 +358,12 @@ const hasBrand = infos.some((i) => i.palette.data.origin === 'brand');
     padding-block: clamp(2rem, 6vw, 4.5rem) clamp(1.5rem, 3vw, 2.5rem);
   }
 
-  .daily {
+  .links {
+    display: flex;
+    gap: 1.25rem;
+  }
+
+  .links a {
     font-weight: 500;
     text-underline-offset: 3px;
   }
