@@ -1,989 +1,635 @@
 ---
 import Base from '../layouts/Base.astro';
-import BrandLockup from '../components/BrandLockup.astro';
-import BrandSlide from '../components/BrandSlide.astro';
-import { BANNER_GROW, BANNER_RAMP, bannerT, brandTokens, brandVars, logoContrast } from '../lib/brand';
-import { SHAPE, SIZE } from '../lib/logo';
-import { getPalettes, href } from '../lib/palettes';
+import { mix, mutedFor, oklch } from '../lib/color';
+import { BANDS as LOGO_BANDS, MONO, SHAPE, SIZE } from '../lib/logo';
+import { assignRoles, getPalettes } from '../lib/palettes';
 
-const home = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/`;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
-const palettes = (await getPalettes()).map(({ palette }) => ({
-  id: palette.id,
-  title: palette.data.title,
-  url: href(palette.id),
-  colors: [...new Map(palette.data.colors.map((c) => [c.hex, { hex: c.hex, name: c.name }])).values()],
-}));
-const SLOTS = Math.max(...palettes.map((p) => p.colors.length));
-const start = Math.max(
-  0,
-  palettes.findIndex((p) => p.id === 'mutely-brand'),
-);
-const first = palettes[start];
-const vars = brandVars(first.colors, SLOTS);
-const slots = Array.from({ length: SLOTS }, (_, k) => ({ k, color: first.colors[k] }));
-const styleOf = (v: Record<string, string>) =>
-  Object.entries(v)
-    .map(([k, x]) => `${k}:${x}`)
-    .join(';');
+const ROLES = [
+  ['bg', 'Background'],
+  ['surface', 'Surface'],
+  ['text', 'Text'],
+  ['muted', 'Muted text'],
+  ['accent', 'Accent'],
+  ['accent2', 'Second accent'],
+] as const;
 
-// Every studio color is a registered <color>, so blocks can transition between palettes.
-const names = Object.keys(vars);
-const registry = `${names
-  .map((n) => `@property ${n}{syntax:'<color>';inherits:true;initial-value:transparent}`)
-  .join('')}.studio .block,.studio .controls,.studio .bar{transition:${names
-  .map((n) => `${n} var(--dur) var(--ease) var(--delay)`)
-  .join(',')}}`;
-
-// Default symbol: the Cores chevrons in one color, so it can be masked like an uploaded mark.
-const chevrons = [100, 80, 60, 40, 20]
-  .map((r) => `M${100 - r} 50L100 ${50 - r}L${100 + r} 50L100 ${50 + r}Z`)
-  .join('');
-const svgUrl = (svg: string) => `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
-const defaultSym = svgUrl(
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path fill-rule="evenodd" d="${chevrons}"/></svg>`,
-);
-const squircle = svgUrl(
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}" preserveAspectRatio="none"><path d="${SHAPE}"/></svg>`,
-);
-const grain = svgUrl(
-  `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".8" numOctaves="3" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .6 0"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>`,
-);
-
-// Contour lines for the in-app slide: wobbly rings around two peaks, like a topographic map.
-const contours = [
-  [560, 230],
-  [180, 120],
-].flatMap(([cx, cy], peak) =>
-  Array.from({ length: 9 }, (_, i) => {
-    const r = 24 + i * 26;
-    const pts = Array.from({ length: 48 }, (_, j) => {
-      const t = (j / 48) * Math.PI * 2;
-      const wob = 1 + 0.12 * Math.sin(t * 3 + i * 0.7 + peak) + 0.06 * Math.cos(t * 5 - i);
-      return `${(cx + Math.cos(t) * r * 1.35 * wob).toFixed(1)} ${(cy + Math.sin(t) * r * wob).toFixed(1)}`;
-    });
-    return `M${pts.join('L')}Z`;
-  }),
-);
-
-// Cover banner: vertical bands that step from the lead color out to the paper, each with its own
-// short vertical gradient. Built from the role colors so the bands fade with every palette change.
-const RAMP = BANNER_RAMP.map(([a, b, w]) =>
-  w === 1 ? `var(--${a})` : `color-mix(in oklab, var(--${a}) ${w * 100}%, var(--${b}))`,
-);
-const rampAt = (t: number) => {
-  const x = Math.min(1, Math.max(0, t)) * (RAMP.length - 1);
-  const i = Math.min(RAMP.length - 2, Math.floor(x));
-  const f = x - i;
-  if (f < 0.02) return RAMP[i];
-  if (f > 0.98) return RAMP[i + 1];
-  return `color-mix(in oklab, ${RAMP[i]} ${Math.round((1 - f) * 100)}%, ${RAMP[i + 1]})`;
-};
-const banner = BANNER_GROW.map((grow, k) => ({ grow, top: rampAt(bannerT(k)), bottom: rampAt(bannerT(k) + 0.16) }));
-
-// Band widths are registered numbers animated on the banner, so the bands and the headline's
-// per-band ink (a text-clipped gradient with stops at the band edges) breathe together.
-const STEPS = 24;
-const widths = (step: number) =>
-  banner
-    .map(({ grow }, k) => `--b${k}:${(grow * (1.45 - 0.45 * Math.cos(2 * Math.PI * (step / STEPS + k * 0.37)))).toFixed(3)}`)
-    .join(';');
-const sum = banner.map((_, k) => `var(--b${k})`).join(' + ');
-const edge = (k: number) => `calc(100% * (${banner.slice(0, k + 1).map((_, j) => `var(--b${j})`).join(' + ')}) / (${sum}))`;
-const titleFill = `linear-gradient(90deg, ${banner
-  .map((_, k) => `var(--bi${k}) ${k ? edge(k - 1) : '0%'} ${k < banner.length - 1 ? edge(k) : '100%'}`)
-  .join(', ')})`;
-const bannerCss = `${banner
-  .map((b, k) => `@property --b${k}{syntax:'<number>';inherits:true;initial-value:${b.grow}}`)
-  .join('')}@keyframes bands{${Array.from({ length: STEPS + 1 }, (_, i) => `${((i / STEPS) * 100).toFixed(2)}%{${widths(i)}}`).join('')}}.banner{--title-fill:${titleFill}}`;
-
-// Hairline arches for the dark poster, widest first.
-const arches = Array.from({ length: 9 }, (_, i) => {
-  const r = 108 - i * 12;
-  return `M${120 - r} 300V${200}A${r} ${r} 0 0 1 ${120 + r} 200V300`;
+// Share of the title card each role gets, roughly how much of a layout it covers.
+const SHARE = { bg: 30, surface: 16, text: 18, muted: 9, accent: 16, accent2: 11 };
+let edge = 0;
+const BANDS = ROLES.map(([role, label], i) => {
+  const x0 = edge;
+  edge += SHARE[role];
+  return { role, label, i, x0, x1: edge };
 });
 
-const TOTAL = 9;
+// Every palette in the collection, mapped onto the six UI roles.
+const starters = (await getPalettes())
+  .map(({ palette }) => {
+    const { colors, title } = palette.data;
+    const { background, surface, text, accent } = assignRoles(colors);
+    const taken = [background, surface, text, accent];
+    const accent2 =
+      [...new Set(colors.map((c) => c.hex))]
+        .filter((h) => !taken.includes(h))
+        .sort((a, b) => oklch(b).c - oklch(a).c)[0] ?? mix(accent, background, 0.5);
+    return {
+      title,
+      colors: { bg: background, surface, text, muted: mutedFor(text, background), accent, accent2 },
+    };
+  })
+  .sort((a, b) => a.title.localeCompare(b.title));
 
-// Type pairings: a display face for headlines and the wordmark, a body face for everything else.
-const PAIRINGS = [
-  { name: 'Schibsted Grotesk', heading: 'Schibsted Grotesk', body: 'Schibsted Grotesk', weight: 500, track: -0.035 },
-  { name: 'Fraunces + DM Sans', heading: 'Fraunces', body: 'DM Sans', weight: 500, track: -0.02 },
-  { name: 'Instrument Serif + DM Sans', heading: 'Instrument Serif', body: 'DM Sans', weight: 400, track: -0.01 },
-  { name: 'Unbounded + Onest', heading: 'Unbounded', body: 'Onest', weight: 600, track: -0.04 },
-  { name: 'Space Grotesk + Inter', heading: 'Space Grotesk', body: 'Inter', weight: 600, track: -0.03 },
-  { name: 'Playfair Display + Source Sans 3', heading: 'Playfair Display', body: 'Source Sans 3', weight: 600, track: -0.015 },
-  { name: 'Syne + Manrope', heading: 'Syne', body: 'Manrope', weight: 700, track: -0.03 },
-  { name: 'Bricolage Grotesque + Figtree', heading: 'Bricolage Grotesque', body: 'Figtree', weight: 700, track: -0.035 },
-  { name: 'DM Sans', heading: 'DM Sans', body: 'DM Sans', weight: 600, track: -0.03 },
-];
-// Suggestions for the family fields; any Google Fonts family name works.
-const GOOGLE_FONTS = [
-  ...new Set([
-    ...PAIRINGS.flatMap((p) => [p.heading, p.body]),
-    'Archivo', 'Barlow', 'Bebas Neue', 'Cormorant Garamond', 'DM Serif Display', 'Epilogue', 'Geist', 'IBM Plex Sans',
-    'IBM Plex Serif', 'Instrument Sans', 'Inter Tight', 'Libre Caslon Text', 'Lora', 'Montserrat', 'Newsreader',
-    'Outfit', 'Plus Jakarta Sans', 'Poppins', 'Public Sans', 'Rubik', 'Sora', 'Space Mono', 'Urbanist', 'Work Sans',
-  ]),
-].sort();
-const type0 = PAIRINGS[0];
-const typeVars = `--display:'${type0.heading}', ui-serif, serif;--body:'${type0.body}', ui-sans-serif, system-ui, sans-serif;--display-weight:${type0.weight};--track:${type0.track}em;--radius:4px`;
+const MARKS = ['petals', 'arcs', 'blocks'] as const;
 
-const name = 'Cores';
-const tagline = 'Built to be remembered.';
-
-const tileText = (k: number) => {
-  const c = first.colors[k];
-  return c ? logoContrast(vars[`--o${k}`], c.hex) : { label: '', pass: true };
+const defaultBrand = {
+  name: 'Lumen',
+  logo: 'petals',
+  colors: {
+    bg: '#E9ECF5',
+    surface: '#D3D8EC',
+    text: '#16163A',
+    muted: '#5D5F7A',
+    accent: '#5B3DF5',
+    accent2: '#FF9F1C',
+  },
+  head: { source: 'google', family: 'Unbounded' },
+  body: { source: 'google', family: 'Onest' },
+  weight: 600,
+  tracking: -0.04,
+  radius: 14,
 };
+
+const GOOGLE_FONTS = [
+  'Anton', 'Archivo', 'Archivo Black', 'Bebas Neue', 'Big Shoulders Display', 'Bricolage Grotesque', 'Chivo',
+  'Chivo Mono', 'Cormorant Garamond', 'DM Mono', 'DM Sans', 'DM Serif Display', 'EB Garamond', 'Familjen Grotesk',
+  'Figtree', 'Fraunces', 'Geist', 'Geist Mono', 'Hanken Grotesk', 'IBM Plex Mono', 'IBM Plex Sans', 'IBM Plex Serif',
+  'Instrument Sans', 'Instrument Serif', 'Inter', 'Inter Tight', 'JetBrains Mono', 'Lexend', 'Libre Caslon Text',
+  'Manrope', 'Newsreader', 'Onest', 'Outfit', 'Playfair Display', 'Plus Jakarta Sans', 'Rubik', 'Schibsted Grotesk',
+  'Sora', 'Space Grotesk', 'Space Mono', 'Syne', 'Unbounded', 'Work Sans',
+];
+
+const PAIRINGS = [
+  ['Unbounded', 'Onest'],
+  ['Space Grotesk', 'Inter'],
+  ['Instrument Serif', 'Instrument Sans'],
+  ['Syne', 'DM Sans'],
+  ['Fraunces', 'Work Sans'],
+  ['Unbounded', 'Manrope'],
+  ['Bricolage Grotesque', 'Figtree'],
+  ['Playfair Display', 'Hanken Grotesk'],
+  ['IBM Plex Sans', 'IBM Plex Mono'],
+  ['Archivo Black', 'Archivo'],
+  ['Geist', 'Geist Mono'],
+];
 ---
 
-<Base title="Brand studio · Cores" description="Try your logo on every palette in the collection, with a guidelines board that redraws as the colors change.">
-  <Fragment slot="head">
-    <style is:inline set:html={registry + bannerCss}></style>
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,100..1000&family=Fraunces:opsz,wght@9..144,100..900&family=Instrument+Serif:ital@0;1&family=Schibsted+Grotesk:wght@400..900&display=swap"
-    />
-  </Fragment>
-
+<Base title="Brand lab · Cores" description="Try a palette and a type pairing on a live brand mock, with Google Fonts or your own font files.">
   <nav class="wrap top">
-    <a href={home}>Cores</a>
-    <a href={`${home}today/`}>Color of the day</a>
+    <a class="home" href={`${base}/`}>
+      <svg viewBox={`0 0 ${SIZE} ${SIZE}`} aria-hidden="true">
+        <defs><clipPath id="home-clip"><path d={SHAPE} /></clipPath></defs>
+        <g clip-path="url(#home-clip)">
+          <rect class="tone" width={SIZE} height={SIZE} style={`fill:${MONO.ground}`} />
+          {LOGO_BANDS.map((points, i) => <polygon class="tone" points={points} style={`fill:${MONO.bands[i]}`} />)}
+        </g>
+      </svg>
+      Cores
+    </a>
+    <span>Brand lab</span>
   </nav>
 
-  <div
-    class="studio"
-    id="studio"
-    data-sym="default"
-    data-lock="none"
-    data-tone="mono"
-    data-palettes={JSON.stringify(palettes)}
-    data-slots={SLOTS}
-    data-start={start}
-    data-pairings={JSON.stringify(PAIRINGS)}
-    style={`${styleOf(vars)};${typeVars};--sym-default:${defaultSym};--squircle:${squircle};--grain:${grain}`}
-  >
-    <header class="wrap head">
-      <h1>Brand studio</h1>
-      <p class="lede">
-        Add a symbol and a logo, then walk them through every palette in the collection. The guidelines below redraw in
-        each new set of colors.
-      </p>
-    </header>
+  <header class="wrap head">
+    <h1>Brand lab</h1>
+    <p>Set six colors and two typefaces and the brand on the right takes them on as you go. Click a band to change that color, or press <kbd>Space</kbd> for a new palette.</p>
+  </header>
 
-    <section class="controls" aria-label="Brand settings" style="--i:0">
-      <div class="wrap control-row">
-        <div class="uploads">
-          {
-            [
-              { slot: 'sym', label: 'Symbol', hint: 'Square mark' },
-              { slot: 'lock', label: 'Logo', hint: 'Wide lockup' },
-            ].map(({ slot, label, hint }) => (
-              <div class="drop" data-drop={slot}>
-                <label>
-                  <span class="drop-preview">
-                    {slot === 'sym' ? (
-                      <i class="sym" />
-                    ) : (
-                      <BrandLockup />
-                    )}
-                  </span>
-                  <span class="drop-text">
-                    <b>{label}</b>
-                    <small data-hint>{hint}, SVG or PNG</small>
-                  </span>
-                  <input type="file" accept="image/svg+xml,image/png,image/jpeg,image/webp" />
-                </label>
-                <button type="button" class="clear" data-clear={slot} aria-label={`Remove ${label.toLowerCase()}`} hidden>
-                  Remove
+  <div class="wrap lab">
+    <aside class="panel" aria-label="Brand settings">
+      <section class="group">
+        <label class="field">
+          <span>Brand name</span>
+          <input id="name" type="text" maxlength="24" autocomplete="off" spellcheck="false" />
+        </label>
+        <fieldset class="logo-pick" id="logo-pick">
+          <legend>Logo</legend>
+          <div class="logo-opts">
+            {
+              MARKS.map((m) => (
+                <button type="button" data-logo={m} aria-pressed="false" aria-label={`Use the ${m} mark`}>
+                  <svg viewBox="0 0 48 48" aria-hidden="true"><use href={`#mark-${m}`} /></svg>
                 </button>
-              </div>
-            ))
-          }
-        </div>
+              ))
+            }
+            <button type="button" data-logo="upload" aria-pressed="false" aria-label="Use your logo" hidden>
+              <img alt="" />
+            </button>
+            <label class="logo-file">
+              <input type="file" accept="image/svg+xml,image/png,image/webp,image/jpeg" />
+              <span>Upload logo</span>
+            </label>
+          </div>
+        </fieldset>
+      </section>
 
-        <div class="fields">
-          <label class="field">
-            <span>Name</span>
-            <input name="name" value={name} maxlength="24" autocomplete="off" spellcheck="false" />
-          </label>
-          <label class="field wide">
-            <span>Tagline</span>
-            <input name="tagline" value={tagline} maxlength="60" autocomplete="off" />
-          </label>
-          <div class="segment" role="group" aria-label="Logo color" data-tone-group hidden>
-            <button type="button" data-tone="mono" aria-pressed="true">One color</button>
-            <button type="button" data-tone="original" aria-pressed="false">Original</button>
+      <section class="group" aria-labelledby="colors-h">
+        <div class="group-head">
+          <h2 id="colors-h">Colors</h2>
+          <div class="actions">
+            <button type="button" class="chip-btn" id="generate">Generate</button>
+            <button type="button" class="chip-btn" id="invert">Invert</button>
           </div>
         </div>
-      </div>
-
-      <details class="wrap type-panel" id="type-panel">
-        <summary>Type <span class="type-summary" data-type-summary>{type0.heading}</span></summary>
-        <div class="type-grid">
-          <label class="tp-field">
-            <span>Try a pairing</span>
-            <select name="pairing">
-              <option value="">Choose a pairing</option>
-              {PAIRINGS.map((p, i) => <option value={i}>{p.name}</option>)}
-            </select>
-          </label>
+        <label class="field">
+          <span>Start from a palette in the collection</span>
+          <select id="starter">
+            <option value="">Choose a palette</option>
+            {starters.map((s, i) => <option value={i}>{s.title}</option>)}
+          </select>
+        </label>
+        <ul class="roles">
           {
-            (['heading', 'body'] as const).map((role) => (
-              <fieldset class="tp-font" data-role={role}>
-                <legend>{role === 'heading' ? 'Headings' : 'Body'}</legend>
-                <div class="segment" role="group" aria-label={`${role === 'heading' ? 'Heading' : 'Body'} font source`}>
-                  <button type="button" data-source="google" aria-pressed="true">Google Fonts</button>
-                  <button type="button" data-source="file" aria-pressed="false">Your files</button>
-                </div>
-                <input
-                  class="tp-input"
-                  list="google-fonts"
-                  value={type0[role]}
-                  autocomplete="off"
-                  spellcheck="false"
-                  aria-label={`${role === 'heading' ? 'Heading' : 'Body'} font family`}
-                />
-                <label class="tp-file" hidden>
+            ROLES.map(([role, label]) => (
+              <li class="role" data-role={role}>
+                <label class="pick">
+                  <input type="color" />
+                  <span class="visually-hidden">{label} color</span>
+                </label>
+                <span class="role-name">{label}</span>
+                <input class="hex-in hex" type="text" maxlength="7" spellcheck="false" autocomplete="off" aria-label={`${label} hex`} />
+                <span class="ratio" />
+                <button type="button" class="lock" aria-pressed="false" title="Keep this color when generating" aria-label={`Lock ${label.toLowerCase()}`}>
+                  <svg viewBox="0 0 16 16" aria-hidden="true">
+                    <rect x="3" y="7" width="10" height="7" rx="1.5" fill="currentColor" />
+                    <path class="shackle" d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" fill="none" stroke="currentColor" stroke-width="1.5" />
+                  </svg>
+                </button>
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+
+      <section class="group" aria-labelledby="type-h">
+        <div class="group-head">
+          <h2 id="type-h">Type</h2>
+        </div>
+        <label class="field">
+          <span>Try a pairing</span>
+          <select id="pairing">
+            <option value="">Choose a pairing</option>
+            {PAIRINGS.map(([h, b], i) => <option value={i}>{h} + {b}</option>)}
+          </select>
+        </label>
+        {
+          (['head', 'body'] as const).map((slot) => (
+            <fieldset class="font" data-slot={slot}>
+              <legend>{slot === 'head' ? 'Headings' : 'Body'}</legend>
+              <div class="seg" role="group" aria-label="Font source">
+                <button type="button" data-source="google" aria-pressed="true">Google Fonts</button>
+                <button type="button" data-source="upload" aria-pressed="false">Your files</button>
+              </div>
+              <div data-pane="google">
+                <input class="family" type="text" list="google-fonts" placeholder="Font family, e.g. Inter" autocomplete="off" spellcheck="false" aria-label="Google Fonts family" />
+              </div>
+              <div data-pane="upload" hidden>
+                <select class="uploaded" aria-label="Uploaded fonts">
+                  <option value="">No fonts uploaded yet</option>
+                </select>
+                <label class="file">
                   <input type="file" accept=".woff2,.woff,.ttf,.otf" />
-                  <span>Choose a font file</span>
+                  <span>Upload a font file</span>
                 </label>
-                <small data-status>From Google Fonts</small>
-              </fieldset>
-            ))
-          }
-          <div class="tp-sliders">
-            <label class="tp-range">
-              <span>Heading weight <output data-out="weight">{type0.weight}</output></span>
-              <input type="range" name="weight" min="300" max="900" step="100" value={type0.weight} />
-            </label>
-            <label class="tp-range">
-              <span>Heading tracking <output data-out="track">{type0.track.toFixed(3)}em</output></span>
-              <input type="range" name="track" min="-0.08" max="0.04" step="0.005" value={type0.track} />
-            </label>
-            <label class="tp-range">
-              <span>Corners <output data-out="radius">4px</output></span>
-              <input type="range" name="radius" min="0" max="32" step="1" value="4" />
-            </label>
-          </div>
-        </div>
+              </div>
+              <p class="font-status" aria-live="polite" />
+            </fieldset>
+          ))
+        }
         <datalist id="google-fonts">{GOOGLE_FONTS.map((f) => <option value={f} />)}</datalist>
-      </details>
+        <label class="field range">
+          <span>Heading weight <output id="weight-out" /></span>
+          <input id="weight" type="range" min="300" max="900" step="100" />
+        </label>
+        <label class="field range">
+          <span>Heading tracking <output id="tracking-out" /></span>
+          <input id="tracking" type="range" min="-0.08" max="0.04" step="0.005" />
+        </label>
+        <label class="field range">
+          <span>Corners <output id="radius-out" /></span>
+          <input id="radius" type="range" min="0" max="32" step="2" />
+        </label>
+      </section>
 
-      <div class="strip-wrap">
-        <div class="strip" id="strip" role="listbox" aria-label="Palettes">
-          {
-            palettes.map((p, i) => {
-              const v = brandVars(p.colors, 0);
-              return (
-                <button
-                  type="button"
-                  class="mini"
-                  role="option"
-                  aria-selected={i === start ? 'true' : 'false'}
-                  data-index={i}
-                  style={`background:${v['--primary']};color:${v['--on-primary']}`}
-                >
-                  <BrandLockup />
-                  <span class="mini-bar">
-                    {p.colors.map((c) => (
-                      <i style={`background:${c.hex}`} />
-                    ))}
-                  </span>
-                  <span class="mini-name">{p.title}</span>
-                </button>
-              );
-            })
-          }
+      <section class="group" aria-labelledby="saved-h">
+        <div class="group-head">
+          <h2 id="saved-h">Saved brands</h2>
+          <button type="button" class="chip-btn" id="save">Save</button>
         </div>
-      </div>
-    </section>
+        <ul class="saved" id="saved"></ul>
+        <p class="hint" id="saved-empty">Saved brands stay in this browser.</p>
+        <template id="saved-item">
+          <li class="saved-item">
+            <button type="button" class="saved-load">
+              <span class="saved-strip"></span>
+              <span class="saved-name"></span>
+              <span class="saved-fonts"></span>
+            </button>
+            <button type="button" class="saved-del">×</button>
+          </li>
+        </template>
+      </section>
 
-    <section class="bar" aria-label="Palette" style="--i:0">
-      <div class="wrap control-row">
-        <div class="pick">
-          <button type="button" class="round" data-step="-1" aria-label="Previous palette">
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" /></svg>
-          </button>
-          <a class="pname" id="pname" href={first.url}>{first.title}</a>
-          <button type="button" class="round" data-step="1" aria-label="Next palette">
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" /></svg>
-          </button>
+      <section class="group">
+        <div class="export">
+          <button type="button" class="chip-btn solid" id="copy-css" data-label="CSS variables">Copy CSS</button>
+          <button type="button" class="chip-btn" id="copy-link" data-label="share link">Copy link</button>
         </div>
+        <p class="hint">The link carries colors and Google Fonts. Uploaded fonts and logos stay on this device.</p>
+      </section>
+    </aside>
 
-        <div class="swatches" role="group" aria-label="Palette colors, click to edit">
+    <svg class="symbols" aria-hidden="true">
+      <defs>
+        <symbol id="mark-petals" viewBox="0 0 48 48">
+          <path d="M24 24V12A12 12 0 1 0 12 24Z" style="fill:var(--m1, var(--accent))" />
+          <path d="M24 24V12A12 12 0 1 0 12 24Z" transform="rotate(90 24 24)" style="fill:var(--m2, var(--accent2))" />
+          <path d="M24 24V12A12 12 0 1 0 12 24Z" transform="rotate(180 24 24)" style="fill:var(--m1, var(--accent))" />
+          <path d="M24 24V12A12 12 0 1 0 12 24Z" transform="rotate(270 24 24)" style="fill:var(--m2, var(--accent2))" />
+        </symbol>
+        <symbol id="mark-arcs" viewBox="0 0 48 48">
+          <path d="M4 44V8A36 36 0 0 1 40 44H30A26 26 0 0 0 4 18Z" style="fill:var(--m1, var(--accent))" />
+          <path d="M4 44V30A14 14 0 0 1 18 44Z" style="fill:var(--m1, var(--accent))" />
+          <circle cx="38" cy="10" r="7" style="fill:var(--m2, var(--accent2))" />
+        </symbol>
+        <symbol id="mark-blocks" viewBox="0 0 48 48">
+          <rect x="4" y="4" width="18" height="18" rx="5" style="fill:var(--m1, var(--accent))" />
+          <circle cx="35" cy="13" r="9" style="fill:var(--m2, var(--accent2))" />
+          <path d="M4 26H22V44A18 18 0 0 1 4 26Z" style="fill:var(--m2, var(--accent2))" />
+          <rect x="26" y="26" width="18" height="18" rx="5" style="fill:var(--m1, var(--accent))" />
+        </symbol>
+      </defs>
+    </svg>
+
+    <main class="preview" id="preview" aria-label="Brand preview">
+      <section class="tc s12" id="title-card" aria-label="Palette">
+        <div class="tc-bands">
           {
-            slots.map(({ k, color }) => (
-              <label class="sw" data-k={k} style={`--k:var(--c${k})`} hidden={!color}>
-                <span class="visually-hidden">Edit color {k + 1}</span>
-                <input type="color" value={(color?.hex ?? '#000000').toLowerCase()} data-edit={k} />
-              </label>
+            BANDS.map(({ role, label, i }) => (
+              <button type="button" class="band" data-band={role} style={`--i:${i}`} aria-label={`Edit ${label.toLowerCase()}`}>
+                <span class="band-meta">
+                  <span class="band-name">{label}</span>
+                  <span class="band-hex hex" />
+                  <span class="band-ratio" />
+                </span>
+              </button>
             ))
           }
         </div>
+        {
+          BANDS.map(({ role, i, x0, x1 }) => (
+            <p class="tc-mark" data-mark={role} style={`--i:${i};--x0:${x0}%;--x1:${x1}%`} aria-hidden="true">
+              <span data-brand-name />
+            </p>
+          ))
+        }
+        <span class="tc-measure" aria-hidden="true" data-brand-name></span>
+      </section>
 
-        <div class="actions">
-          <button type="button" data-act="shift" title="Give the lead role to the next color">Swap lead</button>
-          <button type="button" data-act="shuffle">Shuffle</button>
-          <button type="button" data-act="play" aria-pressed="false">
-            <span class="play-label">Play</span>
-          </button>
-          <button type="button" data-act="reset" hidden>Reset</button>
+      <div class="tile lockup s7">
+        <svg class="mark" viewBox="0 0 48 48" aria-hidden="true"><use data-mark-use href="#mark-petals" /><image data-mark-img width="48" height="48" /></svg>
+        <b data-brand-name></b>
+      </div>
+
+      <div class="tile build s5" aria-hidden="true">
+        <svg viewBox="0 0 100 100">
+          <svg x="10" y="10" width="80" height="80" viewBox="0 0 48 48"><use data-mark-use href="#mark-petals" /><image data-mark-img width="48" height="48" /></svg>
+          <g class="guides">
+            <circle cx="50" cy="50" r="40" />
+            <circle cx="30" cy="30" r="20" />
+            <circle cx="70" cy="30" r="20" />
+            <circle cx="30" cy="70" r="20" />
+            <circle cx="70" cy="70" r="20" />
+            <path d="M0 50H100M50 0V100M0 10H100M0 90H100M10 0V100M90 0V100" />
+          </g>
+        </svg>
+      </div>
+
+      <div class="tile scene s7" aria-hidden="true">
+        <i class="wall-sun"></i>
+        <i class="wall-ring"></i>
+        <i class="wall-slab"></i>
+        <div class="menubar">
+          <span class="menubar-brand"><svg class="mark" viewBox="0 0 48 48"><use data-mark-use href="#mark-petals" /><image data-mark-img width="48" height="48" /></svg><b data-brand-name></b></span>
+          <span class="menubar-items"><span>File</span><span>Edit</span><span>View</span><span>Window</span></span>
+          <span class="menubar-clock">Tue 9:41</span>
+        </div>
+        <div class="win">
+          <div class="win-bar"><i></i><i></i><i></i><span>Today</span></div>
+          <div class="win-body">
+            <ul class="win-side">
+              <li class="on"><i></i>Home</li>
+              <li><i></i>Files</li>
+              <li><i></i>Messages</li>
+              <li><i></i>Calendar</li>
+            </ul>
+            <div class="win-main">
+              <p class="win-greet">Good morning, Ana</p>
+              <div class="win-stats">
+                <div class="win-stat">
+                  <span>Focus today</span>
+                  <b>3h 20m</b>
+                  <span class="meter"><i style="width:68%"></i></span>
+                </div>
+                <div class="win-stat two">
+                  <span>Inbox</span>
+                  <b>12</b>
+                  <span>4 need a reply</span>
+                </div>
+              </div>
+              <div class="win-chart">
+                {[42, 64, 38, 80, 56, 92, 70].map((h, i) => <i style={`height:${h}%`} class={`b${i % 3}`} />)}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="dock"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      </div>
+
+      <div class="tile kit s5">
+        <div class="kit-copy">
+          <p class="kit-title" contenteditable="plaintext-only" spellcheck="false" title="Click to edit">Your whole day, in one calm place.</p>
+          <p class="kit-lede"><span data-brand-name></span> keeps files, apps and people within reach, then gets out of the way when it is time to focus.</p>
+          <div class="kit-row">
+            <span class="btn">Download</span>
+            <span class="btn alt">Watch the film</span>
+          </div>
+        </div>
+        <div class="kit-block">
+          <span class="field-mock"><span>Email</span><b>ana@studio.com</b></span>
+          <div class="kit-row between"><span>Sync across devices</span><span class="toggle"><i></i></span></div>
+          <div class="kit-row between"><span>Night shift</span><span class="toggle off"><i></i></span></div>
+          <div class="seg-mock"><span class="on">Day</span><span>Week</span><span>Month</span></div>
         </div>
       </div>
-    </section>
 
-    <main class="wrap board">
-      <!-- 01 Cover: a banner of stepped color bands -->
-      <article class="block cover" style="--i:1" aria-label="Cover">
-        <div class="banner">
-          <div class="bands" aria-hidden="true">
-            {banner.map((b, k) => <i style={`--top:${b.top};--bottom:${b.bottom};flex-grow:var(--b${k});--n:${k}`} />)}
+      <div class="tile phone-tile s4 tall" aria-hidden="true">
+        <div class="phone">
+          <div class="screen">
+            <div class="ph-top">
+              <span class="ph-logo"><svg class="mark" viewBox="0 0 48 48"><use data-mark-use href="#mark-petals" /><image data-mark-img width="48" height="48" /></svg><b data-brand-name></b></span>
+              <i class="ph-menu"></i>
+            </div>
+            <p class="ph-title">Plan less, do&nbsp;more.</p>
+            <div class="ph-art"><i></i><i></i><i></i></div>
+            <div class="ph-chips"><span class="on">Today</span><span>Focus</span><span>Inbox</span></div>
+            <div class="ph-row"><span>Deep work</span><b>9:00</b></div>
+            <div class="ph-row"><span>Team sync</span><b>11:30</b></div>
+            <div class="ph-tabs"><i class="on"></i><i></i><i></i><i></i></div>
           </div>
-          <p class="banner-top">
-            <span><span data-name>{name}</span> — Brand guidelines</span>
-            <span data-ptitle>{first.title}</span>
+        </div>
+      </div>
+
+      <div class="tile stat s4">
+        <div class="stat-disc">
+          <span class="stat-badge">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.2 6.8L21 12l-6.8 2.2L12 21l-2.2-6.8L3 12l6.8-2.2z" /></svg>
+          </span>
+          <p class="stat-num">
+            +27
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18L18 6M8 6h10v10" /></svg>
           </p>
-          <h2 class="banner-title" data-tagline>{tagline}</h2>
-          <div class="banner-foot">
-            <p>Identity, color and type<br />for every surface</p>
-            <BrandLockup />
-            <p data-domain-short>cores.co</p>
+          <p class="stat-label">hours of focus this month</p>
+        </div>
+      </div>
+
+      <div class="tile icon-set s4" aria-hidden="true">
+        <span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" /><path d="M12 8v4l3 2" /></svg></span>
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15z" /><path d="M10 20a2 2 0 0 0 4 0" /></svg></span>
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg></span>
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l2.2 6.8L21 12l-6.8 2.2L12 21l-2.2-6.8L3 12l6.8-2.2z" /></svg></span>
+      </div>
+
+      <div class="tile pills s4">
+        <span class="pill dot"></span>
+        <span class="pill">Focus</span>
+        <span class="pill">Calm</span>
+        <span class="pill grad">Clarity</span>
+        <span class="pill dot alt"></span>
+        <span class="pill">Flow</span>
+        <span class="pill">Balance</span>
+        <span class="pill outline">Trust</span>
+      </div>
+
+      <div class="tile chat s4">
+        <p class="bubble one">Ready for a quiet morning?</p>
+        <p class="bubble two">Absolutely!</p>
+      </div>
+
+      <div class="tile street s8" aria-hidden="true">
+        <div class="board">
+          <div class="board-lights"><i></i><i></i><i></i><i></i></div>
+          <div class="board-face">
+            <div class="bf-a"><svg class="mark" viewBox="0 0 48 48"><use data-mark-use href="#mark-petals" /><image data-mark-img width="48" height="48" /></svg></div>
+            <div class="bf-b">
+              <span>Quiet hours</span>
+              <span>Focus mode</span>
+              <span>One dock</span>
+              <b data-brand-name></b>
+            </div>
+            <div class="bf-c">
+              <b>Less noise. More done.</b>
+              <span>Everything you need on one calm desktop.</span>
+            </div>
+          </div>
+          <div class="board-legs"><i></i><i></i></div>
+        </div>
+      </div>
+
+      <div class="tile badge-tile s4" aria-hidden="true">
+        <i class="strap"></i>
+        <div class="badge">
+          <div class="badge-top">
+            <svg class="mark" viewBox="0 0 48 48"><use data-mark-use href="#mark-petals" /><image data-mark-img width="48" height="48" /></svg>
+            <span class="qr">{[1,1,1,0,1, 1,0,1,1,0, 1,1,1,0,1, 0,1,0,1,1, 1,0,1,1,1].map((on) => <i class={on ? 'on' : undefined} />)}</span>
+          </div>
+          <div class="badge-name"><b>Ana Moreno</b><span>Head of Design</span></div>
+        </div>
+      </div>
+
+      <div class="tile specimen s5">
+        <p class="specimen-aa">Aa</p>
+        <p class="specimen-glyphs">Aa Bb Cc Dd Ee Ff Gg<br />Hh Ii Jj Kk Ll Mm Nn<br />Oo Pp Qq Rr Ss Tt Uu<br />Vv Ww Xx Yy Zz<br />01 02 03 04 05 06 07 08 09</p>
+        <p class="specimen-name"><b data-font="head"></b> <span data-font-source="head"></span></p>
+      </div>
+
+      <div class="tile scale s7">
+        <p class="s-1" data-brand-name></p>
+        <p class="s-2">Everything in its place</p>
+        <p class="s-3">Quiet by default, quick when you need it</p>
+        <p class="s-body">
+          Good type disappears into the reading. Set a paragraph long enough to see the rhythm of the lines and how the
+          figures sit next to the letters: 24 apps, 3 devices, 1 account.
+        </p>
+        <p class="specimen-name"><b data-font="body"></b> <span data-font-source="body"></span></p>
+      </div>
+
+      <div class="tile inuse s12">
+        <div class="cols" aria-hidden="true">{Array.from({ length: 8 }, () => <i />)}</div>
+        <div class="iu-row">
+          <span class="iu-note">Heading</span>
+          <p class="iu-h">Built for the way you actually work.</p>
+        </div>
+        <div class="iu-row">
+          <span class="iu-note">Body</span>
+          <div class="iu-cols">
+            <p><b>Spaces</b> Group the apps and files for each project, and switch between them in one move.</p>
+            <p><b>Focus</b> Hold notifications until you are done, with a summary waiting when you surface.</p>
           </div>
         </div>
-      </article>
-
-      <!-- 02 Logo on every color -->
-      <BrandSlide title="Logo on color" sub="Every ground in the palette" n={2} total={TOTAL} palette={first.title} span>
-        <p class="meta" slot="aside">Click a tile to copy its hex<br /><span data-ptitle>{first.title}</span></p>
-        <div class="on-color">
-          {
-            slots.map(({ k, color }) => {
-              const t = tileText(k);
-              return (
-                <button
-                  type="button"
-                  class="tile"
-                  data-k={k}
-                  style={`background:var(--c${k});color:var(--o${k})`}
-                  data-copy={color?.hex}
-                  data-swatch={color?.hex}
-                  hidden={!color}
-                >
-                  <BrandLockup />
-                  <span class="tile-foot">
-                    <span class="tile-name" data-f="name">{color?.name ?? ''}</span>
-                    <span class="hex" data-f="hex">{color?.hex}</span>
-                    <span class="badge" data-f="ratio" data-pass={String(t.pass)}>{t.label}</span>
-                  </span>
-                </button>
-              );
-            })
-          }
-          <div class="tile meshy" style="color:var(--on-deep)">
-            <BrandLockup />
-            <span class="tile-foot"><span class="tile-name">Gradient</span></span>
-          </div>
-          <div class="tile" style="background:#FFFFFF;color:var(--on-white)">
-            <BrandLockup />
-            <span class="tile-foot"><span class="tile-name">White</span><span class="hex">#FFFFFF</span></span>
-          </div>
-          <div class="tile" style="background:#000000;color:var(--on-black)">
-            <BrandLockup />
-            <span class="tile-foot"><span class="tile-name">Black</span><span class="hex">#000000</span></span>
-          </div>
+        <div class="iu-row">
+          <span class="iu-note">Button</span>
+          <span class="btn small">Try <span data-brand-name></span></span>
         </div>
-      </BrandSlide>
+      </div>
 
-      <!-- 03 Symbol -->
-      <BrandSlide title="Icon system" sub="Brand mark" n={3} total={TOTAL} palette={first.title}>
-        <div class="panel">
-          <figure class="pane spec">
-            <span class="bracket"><span>Icon</span></span>
-            <i class="sym hero-sym" />
-            <figcaption class="note">
-              <b>Note:</b> At display size the mark takes the brand gradient. Everywhere else it is one flat color, chosen
-              for contrast with its ground. It is never rotated, outlined or set on its side.
-            </figcaption>
-          </figure>
-          <div class="pane quad">
-            <div class="q meshy" style="color:var(--on-deep)"><i class="sym" /></div>
-            <div class="q" style="background:var(--accent);color:var(--on-accent)"><i class="sym" /></div>
-            <div class="q" style="background:var(--primary);color:var(--on-primary)"><i class="sym" /></div>
-            <div class="q sizes" style="background:#FFFFFF;color:var(--on-white)">
-              <span><i class="sym" /><i class="sym" /><i class="sym" /></span>
-              <small>Minimum size — 16 px</small>
-            </div>
-          </div>
-        </div>
-      </BrandSlide>
-
-      <!-- 04 Primary logo -->
-      <BrandSlide title="Primary logo" sub="Logo construction" n={4} total={TOTAL} palette={first.title}>
-        <div class="panel">
-          <figure class="pane spec">
-            <span class="bracket wide"><span>Clear space</span></span>
-            <span class="guides"><BrandLockup /><small>Main logo</small></span>
-            <figcaption class="note">
-              <b>Note:</b> Keep a margin as tall as the symbol on every side. Never stretch the logo or set it on a color
-              that drops it below 3:1.
-            </figcaption>
-          </figure>
-          <div class="pane quad">
-            {
-              [
-                ['meshy', 'color:var(--on-deep)'],
-                ['', 'background:var(--light);color:var(--on-light)'],
-                ['', 'background:var(--primary);color:var(--on-primary)'],
-                ['', 'background:#FFFFFF;color:var(--on-white)'],
-              ].map(([extra, style]) => (
-                <div class:list={['q corner', extra]} style={style}>
-                  <BrandLockup />
-                </div>
-              ))
-            }
-          </div>
-        </div>
-      </BrandSlide>
-
-      <!-- 05 Colors -->
-      <BrandSlide title="Brand colors" sub="Color system" n={5} total={TOTAL} palette={first.title}>
-        <button type="button" class="pill" id="tokens" slot="aside" data-copy={brandTokens(first.colors)} data-label="brand tokens">
-          Copy tokens
-        </button>
-        <div class="panel colors">
-          <div class="pane list-pane">
-            <ul class="swatch-list">
-              {
-                slots.map(({ k, color }) => (
-                  <li data-k={k} hidden={!color}>
-                    <button type="button" data-copy={color?.hex} data-swatch={color?.hex}>
-                      <i style={`background:var(--c${k})`} />
-                      <span>
-                        <b data-f="label">{color?.name ?? ''}</b>
-                        <span class="hex" data-f="hex">{color?.hex}</span>
-                      </span>
-                    </button>
-                  </li>
-                ))
-              }
-            </ul>
-            <p class="note">
-              <b>Note:</b> <span data-f-roles>The lead color carries a page on its own.</span> Tints are for charts and
-              states, never for layouts: a surface is a full-strength color or the gradient.
-            </p>
-          </div>
-          <div class="pane tints">
-            {
-              slots.map(({ k, color }) => (
-                <button
-                  type="button"
-                  class="tint-col"
-                  data-k={k}
-                  style={`--k:var(--c${k});--on:var(--o${k})`}
-                  data-copy={color?.hex}
-                  data-swatch={color?.hex}
-                  hidden={!color}
-                >
-                  {[88, 74, 58, 40, 20].map((p) => (
-                    <i style={`background:color-mix(in oklab, var(--k), #FFFFFF ${p}%)`} />
-                  ))}
-                  <i class="base">
-                    <span class="hex" data-f="hex">{color?.hex}</span>
-                  </i>
-                  {[20, 40, 60].map((p) => (
-                    <i style={`background:color-mix(in oklab, var(--k), #000000 ${p}%)`} />
-                  ))}
-                </button>
-              ))
-            }
-          </div>
-        </div>
-      </BrandSlide>
-
-      <!-- 06 Typography -->
-      <BrandSlide title="Typography" sub="Brand typeface" n={6} total={TOTAL} palette={first.title}>
-        <div class="panel">
-          <div class="pane type-left">
-            <div>
-              <p class="face" data-font="name">{type0.heading}</p>
-              <p class="weights" data-font="weights">Headings Medium · Body Regular</p>
-              <p class="family"><span data-domain-short>cores.co</span> · <span data-font="pair">one family, no exceptions</span></p>
-            </div>
-            <p class="spacing">Letter spacing<br /><span data-font="track">−3.5%</span></p>
-            <p class="note"><b>Note:</b> <span data-font="note">{type0.heading} carries every headline and the body copy too.</span></p>
-          </div>
-          <div class="pane type-right">
-            <p class="aa">AaBbCc</p>
-            <div class="alpha">
-              <p>ABCDEFGHIJKLMNOPQRSTUVWXYZ<br />0123456789<br />!@#$%^&amp;*()</p>
-              <p>abcdefghijklmnopqrstuvwxyz<br />0123456789<br />!@#$%^&amp;*()</p>
-            </div>
-          </div>
-        </div>
-      </BrandSlide>
-
-      <!-- 07 Visual language -->
-      <BrandSlide title="Brand visuals" sub="Visual language" n={7} total={TOTAL} palette={first.title} span>
-        <div class="panel visuals">
-          <div class="pane">
-            <p class="note">
-              <b>Note:</b> The mark opened out: the same shape drawn in hairlines and nested, set behind headlines and under
-              photography as texture. Cards stay plain — one color field, one claim, one number — so the work reads as
-              advice, not advertising.
-            </p>
-          </div>
-          <div class="pane posters">
-            <div class="poster p1" style="background:var(--light);color:var(--on-light)">
-              <p class="p-head" data-tagline>{tagline}</p>
-              <p class="p-nav"><span>Identity</span><span>Color</span><span>Type</span><span>Motion</span></p>
-            </div>
-            <div class="poster p2 meshy" style="color:var(--on-deep)">
-              <p class="p-head">Now wearing <span data-ptitle>{first.title}</span>.</p>
-              <BrandLockup />
-            </div>
-            <div class="poster p3" style="background:var(--deep);color:var(--on-deep)">
-              <p class="p-head big" data-name>{name}</p>
-              <svg class="arches" viewBox="0 0 240 300" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
-                {arches.map((d, i) => <path d={d} pathLength="1" style={`--n:${i}`} />)}
-              </svg>
-              <p class="p-foot"><span>01 — Symbol<br />The mark, alone</span><span>02 — Color<br />One palette, many grounds</span></p>
-            </div>
-            <div class="poster p4 crop" style="background:var(--primary);color:var(--on-primary)">
-              <i class="sym giant" />
-              <p class="p-head small" data-tagline>{tagline}</p>
-            </div>
-          </div>
-        </div>
-      </BrandSlide>
-
-      <!-- 08 In app, a full-bleed slide in the palette's light color -->
-      <BrandSlide title="In app" sub="In app — companion and day view" n={8} total={TOTAL} palette={first.title} span fill bare>
-        <div class="inapp">
-          <svg class="contours" viewBox="0 0 800 420" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-            {contours.map((d, i) => <path d={d} pathLength="1" style={`--n:${i}`} />)}
-          </svg>
-          <i class="sym ghost-mark a" />
-          <i class="sym ghost-mark b" />
-
-          <div class="phone ui">
-            <div class="screen ui-screen">
-              <div class="ui-hero meshy">
-                <BrandLockup />
-                <p class="ui-greet">Good evening.</p>
-              </div>
-              <div class="ui-body">
-                <p class="bubble me">Can we move the launch review to Friday?</p>
-                <div class="bubble them">
-                  <i class="sym" />
-                  <p>Done. Friday at 10:00 with the whole team, and I moved two clashes to Monday.</p>
-                </div>
-                <p class="ui-chips"><span>Send invites</span><span>Agenda</span><span>Later</span></p>
-                <div class="ui-card">
-                  <p><i class="ui-badge"><i class="sym" /></i><b>Review booked — Fri 10:00</b></p>
-                  <small>6 people · Room 2 · 45 min</small>
-                  <p class="ui-actions"><span class="ui-btn solid">Confirm</span><span class="ui-btn">Other times</span></p>
-                </div>
-                <p class="ui-input"><span>Ask <span data-name>{name}</span> anything</span><i /></p>
-              </div>
-            </div>
-          </div>
-
-          <div class="phone ui">
-            <div class="screen ui-screen map">
-              <svg class="ui-map" viewBox="0 0 200 220" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-                {contours.slice(0, 7).map((d) => <path d={d} transform="scale(0.32) translate(-80 -20)" />)}
-                <path class="route" d="M38 182 C 70 160, 60 120, 100 104 S 150 70, 160 48" />
-                <circle class="pin start" cx="38" cy="182" r="4" />
-              </svg>
-              <span class="ui-pin"><i class="sym" /></span>
-              <p class="ui-search"><span>Today · <span data-name>{name}</span></span><i class="sym" /></p>
-              <div class="ui-sheet">
-                <p class="ui-sheet-title">Today</p>
-                <ul>
-                  <li><b>09:30</b><span>Standup<small>15 min · Studio</small></span></li>
-                  <li><b>13:00</b><span>Lunch with Sam<small>Held until 13:15</small></span></li>
-                  <li><b>16:45</b><span>Ship the release<small>Leave in 10 minutes</small></span><i class="sym" /></li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      </BrandSlide>
-
-      <!-- 09 Applications -->
-      <BrandSlide title="Applications" sub="The identity in use" n={9} total={TOTAL} palette={first.title} span>
-        <div class="panel apps">
-          <div class="pane app-icon-stage">
-            <span class="app">
-              <span class="icon"><i class="sym" /></span>
-              <b class="badge-dot">3</b>
-            </span>
-            <small class="stage-label"><span data-name>{name}</span> — App icon</small>
-          </div>
-          <div class="pane phone-stage">
-            <div class="phone">
-              <div class="screen">
-                <span class="clock">10:30</span>
-                <div class="grid-icons">
-                  {Array.from({ length: 7 }, () => <span class="ghost" />)}
-                  <span class="app small">
-                    <span class="icon"><i class="sym" /></span>
-                    <small data-name>{name}</small>
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="pane cards">
-            <div class="card front" style="background:#FFFFFF;color:var(--on-white)">
-              <BrandLockup />
-              <p><b>Alex Rivera</b><br />Founder<br /><span data-domain>hello@cores.co</span></p>
-            </div>
-            <div class="card back" style="background:var(--primary);color:var(--on-primary)">
-              <span class="pattern">{Array.from({ length: 28 }, (_, i) => <i class="sym" style={`--n:${(i % 7) + Math.floor(i / 7)}`} />)}</span>
-            </div>
-          </div>
-        </div>
-      </BrandSlide>
+      <div class="tile poster one s4">
+        <span class="poster-top">Out now</span>
+        <b data-brand-initial></b>
+      </div>
+      <div class="tile poster two s4">
+        <i class="dot"></i><i class="pill-shape"></i>
+        <span class="poster-top">Focus mode</span>
+        <b>Made for deep work.</b>
+      </div>
+      <div class="tile poster three s4">
+        <span class="poster-top">Every app, one dock</span>
+        <div class="icons"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <b data-brand-name></b>
+      </div>
     </main>
   </div>
+
+  <script type="application/json" id="starters" set:html={JSON.stringify(starters)} />
+  <script type="application/json" id="default-brand" set:html={JSON.stringify(defaultBrand)} />
+  <script type="application/json" id="pairings" set:html={JSON.stringify(PAIRINGS)} />
 </Base>
 
 <script>
-  import { brandRoles, brandTokens, brandVars, logoContrast } from '../lib/brand';
-  import { slugify } from '../lib/color';
+  import { contrast, inkOn, mix, mutedFor, oklch, oklchToHex, slugify, wcagLevel } from '../lib/color';
+  import { logoRamp } from '../lib/logo';
 
-  type Color = { hex: string; name: string | null };
-  type Palette = { id: string; title: string; url: string; colors: Color[] };
-  type Slot = 'sym' | 'lock';
-  type Art = { src: string; mask: string; ratio: number };
-  type Pairing = { name: string; heading: string; body: string; weight: number; track: number };
-  type FontRole = 'heading' | 'body';
-  type FontChoice = { source: 'google' | 'file'; family: string; label?: string; data?: string };
-  type TypeState = Record<FontRole, FontChoice> & { weight: number; track: number; radius: number };
+  type Role = 'bg' | 'surface' | 'text' | 'muted' | 'accent' | 'accent2';
+  type Slot = 'head' | 'body';
+  interface Font {
+    source: 'google' | 'upload';
+    family: string;
+  }
+  type Logo = 'petals' | 'arcs' | 'blocks' | 'upload';
+  interface Brand {
+    name: string;
+    logo: Logo;
+    colors: Record<Role, string>;
+    head: Font;
+    body: Font;
+    weight: number;
+    tracking: number;
+    radius: number;
+  }
 
-  const studio = document.getElementById('studio')!;
-  const palettes: Palette[] = JSON.parse(studio.dataset.palettes!);
-  const SLOTS = +studio.dataset.slots!;
-  const strip = document.getElementById('strip')!;
-  const minis = [...strip.querySelectorAll<HTMLButtonElement>('.mini')];
-  const pname = document.getElementById('pname') as HTMLAnchorElement;
-  const tokens = document.getElementById('tokens')!;
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const ROLES: Role[] = ['bg', 'surface', 'text', 'muted', 'accent', 'accent2'];
+  const SLOTS: Slot[] = ['head', 'body'];
+  const CURRENT = 'cores-brand';
+  const SAVED = 'cores-brand-saved';
 
-  const store = {
-    get(k: string) {
-      try {
-        return localStorage.getItem(`cores-brand-${k}`);
-      } catch {
-        return null;
-      }
-    },
-    set(k: string, v: string | null) {
-      try {
-        if (v === null) localStorage.removeItem(`cores-brand-${k}`);
-        else localStorage.setItem(`cores-brand-${k}`, v);
-      } catch {}
-    },
-  };
+  const json = <T,>(id: string): T => JSON.parse(document.getElementById(id)!.textContent!);
+  const DEFAULT = json<Brand>('default-brand');
+  const starters = json<{ title: string; colors: Record<Role, string> }[]>('starters');
+  const pairings = json<[string, string][]>('pairings');
 
-  const state = { index: +studio.dataset.start!, colors: [] as Color[], shift: 0, edited: false };
+  const $ = <T extends Element = HTMLElement>(sel: string, root: ParentNode = document) =>
+    root.querySelector<T>(sel)!;
+  const preview = $('#preview');
+  const homeTones = [...document.querySelectorAll<SVGElement>('.home .tone')];
+  const isHex = (v: unknown): v is string => typeof v === 'string' && /^#[0-9A-F]{6}$/.test(v);
 
-  const all = <T extends Element = HTMLElement>(sel: string) => studio.querySelectorAll<T>(sel);
-  const setText = (sel: string, text: string) => all(sel).forEach((el) => (el.textContent = text));
-
-  function render() {
-    const p = palettes[state.index];
-    const vars = brandVars(state.colors, SLOTS, state.shift);
-    for (const [k, v] of Object.entries(vars)) studio.style.setProperty(k, v);
-
-    // Role names for the color list, most important role first.
-    const roles = brandRoles(state.colors, state.shift);
-    const roleOf = (hex: string) =>
-      (['primary', 'accent', 'paper', 'deep', 'surface'] as const).find((r) => roles[r] === hex) ?? 'support';
-    const label = (c: Color) => {
-      const role = roleOf(c.hex);
-      return c.name ? `${c.name} · ${role}` : role[0].toUpperCase() + role.slice(1);
+  /** Fill gaps in a stored or shared brand from the default. */
+  function valid(b: Partial<Brand> | null | undefined): Brand {
+    const colors = { ...DEFAULT.colors };
+    for (const r of ROLES) if (isHex(b?.colors?.[r])) colors[r] = b!.colors![r];
+    const font = (f: Font | undefined, d: Font): Font =>
+      f && (f.source === 'google' || f.source === 'upload') && typeof f.family === 'string' && f.family.trim()
+        ? { source: f.source, family: f.family }
+        : d;
+    const num = (v: unknown, d: number) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
+    const logos: Logo[] = ['petals', 'arcs', 'blocks', 'upload'];
+    return {
+      name: typeof b?.name === 'string' ? b.name : DEFAULT.name,
+      logo: logos.includes(b?.logo as Logo) ? b!.logo! : DEFAULT.logo,
+      colors,
+      head: font(b?.head, DEFAULT.head),
+      body: font(b?.body, DEFAULT.body),
+      weight: num(b?.weight, DEFAULT.weight),
+      tracking: num(b?.tracking, DEFAULT.tracking),
+      radius: num(b?.radius, DEFAULT.radius),
     };
-    const nameOf = (hex: string) => state.colors.find((c) => c.hex === hex)?.name ?? hex;
-    setText(
-      '[data-f-roles]',
-      `${nameOf(roles.primary)} leads and carries a page on its own. ${nameOf(roles.accent)} is the signal, used once. ${nameOf(roles.paper)} is the paper and ${nameOf(roles.deep)} the ink.`,
-    );
-
-    const title = state.edited ? `${p.title}, edited` : p.title;
-    setText('[data-ptitle]', title);
-    pname.textContent = title;
-    pname.href = p.url;
-
-    all('[data-k]').forEach((el) => {
-      const k = +el.dataset.k!;
-      const c = state.colors[k];
-      el.hidden = !c;
-      if (!c) return;
-      if (el.dataset.copy !== undefined) {
-        el.dataset.copy = c.hex;
-        el.dataset.swatch = c.hex;
-      }
-      const f = (n: string) => el.querySelector<HTMLElement>(`[data-f=${n}]`);
-      if (f('name')) f('name')!.textContent = c.name ?? '';
-      if (f('label')) f('label')!.textContent = label(c);
-      if (f('hex')) f('hex')!.textContent = c.hex;
-      const badge = f('ratio');
-      if (badge) {
-        const t = logoContrast(vars[`--o${k}`], c.hex);
-        badge.textContent = t.label;
-        badge.dataset.pass = String(t.pass);
-      }
-      const input = el.querySelector<HTMLInputElement>('input[type=color]');
-      if (input && document.activeElement !== input) input.value = c.hex.toLowerCase();
-    });
-    tokens.dataset.copy = brandTokens(state.colors, state.shift);
-    studio.querySelector<HTMLElement>('[data-act=reset]')!.hidden = !state.edited;
   }
 
-  function select(i: number, { scroll = true } = {}) {
-    state.index = (i + palettes.length) % palettes.length;
-    const p = palettes[state.index];
-    state.colors = p.colors.map((c) => ({ ...c }));
-    state.shift = 0;
-    state.edited = false;
-    render();
-    minis.forEach((m, j) => m.setAttribute('aria-selected', String(j === state.index)));
-    if (scroll) {
-      const m = minis[state.index];
-      strip.scrollTo({
-        left: m.offsetLeft - strip.clientWidth / 2 + m.offsetWidth / 2,
-        behavior: reduce ? 'auto' : 'smooth',
-      });
-    }
-    store.set('palette', p.id);
-    const url = new URL(location.href);
-    url.searchParams.set('p', p.id);
-    history.replaceState(null, '', url);
-  }
-
-  // Name and tagline
-  const nameInput = studio.querySelector<HTMLInputElement>('input[name=name]')!;
-  const tagInput = studio.querySelector<HTMLInputElement>('input[name=tagline]')!;
-  const applyName = () => {
-    const n = nameInput.value.trim() || 'Cores';
-    setText('[data-name]', n);
-    const domain = `${slugify(n).replace(/-/g, '') || 'brand'}.co`;
-    setText('[data-domain]', `hello@${domain}`);
-    setText('[data-domain-short]', domain);
+  const encode = (b: Brand) => {
+    const bytes = new TextEncoder().encode(JSON.stringify(b));
+    return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   };
-  // Shrink the banner headline until its longest word fits, rather than breaking a word.
-  const bannerTitle = studio.querySelector<HTMLElement>('.banner-title')!;
-  const measure = document.createElement('canvas').getContext('2d')!;
-  function fitTitle() {
-    bannerTitle.style.fontSize = '';
-    const cs = getComputedStyle(bannerTitle);
-    const room = bannerTitle.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-    const size = parseFloat(cs.fontSize);
-    measure.font = `${cs.fontWeight} ${size}px ${cs.fontFamily}`;
-    const track = parseFloat(cs.letterSpacing) || 0;
-    const widest = Math.max(
-      ...(bannerTitle.textContent ?? '')
-        .toUpperCase()
-        .split(/\s+/)
-        .map((w) => measure.measureText(w).width + track * w.length),
-    );
-    if (widest > room) bannerTitle.style.fontSize = `${Math.floor((size * room * 0.97) / widest)}px`;
-  }
-  new ResizeObserver(fitTitle).observe(bannerTitle);
-  document.fonts.addEventListener('loadingdone', fitTitle);
-
-  const applyTagline = () => {
-    setText('[data-tagline]', tagInput.value.trim() || 'Built to be remembered.');
-    fitTitle();
-  };
-  nameInput.addEventListener('input', () => {
-    applyName();
-    store.set('name', nameInput.value);
-  });
-  tagInput.addEventListener('input', () => {
-    applyTagline();
-    store.set('tagline', tagInput.value);
-  });
-
-  // Symbol and logo artwork, kept in its original colors and also used as a one-color mask.
-  // An opaque image has its background knocked out first, so both versions sit on any ground.
-  const load = (src: string) =>
-    new Promise<HTMLImageElement>((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = reject;
-      img.src = src;
-    });
-
-  async function readArt(file: File): Promise<Art> {
-    if (file.type === 'image/svg+xml' || file.name.endsWith('.svg')) {
-      const text = await file.text();
-      const src = `data:image/svg+xml,${encodeURIComponent(text)}`;
-      const img = await load(src);
-      let ratio = img.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : 0;
-      if (!ratio) {
-        const box = text.match(/viewBox=["']\s*[\d.-]+[\s,]+[\d.-]+[\s,]+([\d.]+)[\s,]+([\d.]+)/);
-        ratio = box ? +box[1] / +box[2] : 1;
-      }
-      return { src, mask: src, ratio };
-    }
-
-    const url = URL.createObjectURL(file);
-    const img = await load(url).finally(() => URL.revokeObjectURL(url));
-    const scale = Math.min(1, 1024 / Math.max(img.naturalWidth, img.naturalHeight));
-    const w = Math.round(img.naturalWidth * scale);
-    const h = Math.round(img.naturalHeight * scale);
-    const canvas = Object.assign(document.createElement('canvas'), { width: w, height: h });
-    const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
-    ctx.drawImage(img, 0, 0, w, h);
-    const px = ctx.getImageData(0, 0, w, h);
-    const d = px.data;
-    const lum = (i: number) => (0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]) / 255;
-
-    let opaque = true;
-    for (let i = 3; i < d.length; i += 28) {
-      if (d[i] < 250) {
-        opaque = false;
-        break;
-      }
-    }
-
-    if (opaque) {
-      // Background is whatever the corners agree on; distance from it becomes alpha.
-      const corners = [0, (w - 1) * 4, (h - 1) * w * 4, (h * w - 1) * 4];
-      const bg = corners.reduce((s, i) => s + lum(i), 0) / 4;
-      for (let i = 0; i < d.length; i += 4) {
-        d[i + 3] = Math.min(255, Math.max(0, (Math.abs(lum(i) - bg) - 0.08) * 1.6 * 255));
-      }
-    }
-
-    // Trim empty margins so the artwork sits on its own bounds.
-    let [x0, y0, x1, y1] = [w, h, -1, -1];
-    for (let y = 0; y < h; y++)
-      for (let x = 0; x < w; x++)
-        if (d[(y * w + x) * 4 + 3] > 10) {
-          if (x < x0) x0 = x;
-          if (x > x1) x1 = x;
-          if (y < y0) y0 = y;
-          if (y > y1) y1 = y;
-        }
-    if (x1 < 0) [x0, y0, x1, y1] = [0, 0, w - 1, h - 1];
-    const cw = x1 - x0 + 1;
-    const ch = y1 - y0 + 1;
-    const out = Object.assign(document.createElement('canvas'), { width: cw, height: ch });
-    out.getContext('2d')!.putImageData(px, -x0, -y0);
-    const src = out.toDataURL('image/png');
-    return { src, mask: src, ratio: cw / ch };
-  }
-
-  const toneGroup = studio.querySelector<HTMLElement>('[data-tone-group]')!;
-  function setArt(slot: Slot, art: Art | null) {
-    const s = studio.style;
-    if (art) {
-      s.setProperty(`--${slot}-mask`, `url("${art.mask}")`);
-      s.setProperty(`--${slot}-src`, `url("${art.src}")`);
-      s.setProperty(`--${slot}-ratio`, String(art.ratio));
-    } else ['mask', 'src', 'ratio'].forEach((p) => s.removeProperty(`--${slot}-${p}`));
-    studio.dataset[slot] = art ? 'img' : slot === 'sym' ? 'default' : 'none';
-    studio.querySelector<HTMLElement>(`[data-clear=${slot}]`)!.hidden = !art;
-    toneGroup.hidden = studio.dataset.sym !== 'img' && studio.dataset.lock !== 'img';
-  }
-
-  async function upload(slot: Slot, file: File | undefined) {
-    if (!file || !file.type.startsWith('image/')) return;
+  const decode = (s: string): Brand | null => {
     try {
-      const art = await readArt(file);
-      setArt(slot, art);
-      store.set(slot, JSON.stringify(art));
-      if (!reduce)
-        all(`.board .${slot}`).forEach((el, i) =>
-          el.animate(
-            { scale: [0.6, 1], opacity: [0, 1] },
-            { duration: 520, delay: Math.min(i, 40) * 12, easing: 'cubic-bezier(0.2, 0.9, 0.3, 1.2)', fill: 'backwards' },
-          ),
-        );
+      const bin = atob(s.replace(/-/g, '+').replace(/_/g, '/'));
+      return valid(JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0)))));
+    } catch {
+      return null;
+    }
+  };
+
+  function initial(): Brand {
+    const shared = location.hash.startsWith('#b=') ? decode(location.hash.slice(3)) : null;
+    if (shared) {
+      history.replaceState(null, '', location.pathname + location.search);
+      return shared;
+    }
+    try {
+      const stored = localStorage.getItem(CURRENT);
+      if (stored) return valid(JSON.parse(stored));
     } catch {}
+    return valid(DEFAULT);
   }
 
-  all<HTMLElement>('[data-drop]').forEach((zone) => {
-    const slot = zone.dataset.drop as Slot;
-    const input = zone.querySelector<HTMLInputElement>('input[type=file]')!;
-    input.addEventListener('change', () => {
-      upload(slot, input.files?.[0]);
-      input.value = '';
-    });
-    zone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      zone.dataset.over = '';
-    });
-    zone.addEventListener('dragleave', () => delete zone.dataset.over);
-    zone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      delete zone.dataset.over;
-      upload(slot, e.dataTransfer?.files[0]);
-    });
-  });
-  // Dropped anywhere else: wide artwork is the logo, anything squarer the symbol.
-  document.addEventListener('dragover', (e) => e.preventDefault());
-  document.addEventListener('drop', async (e) => {
-    e.preventDefault();
-    const file = e.dataTransfer?.files[0];
-    if (!file || !file.type.startsWith('image/')) return;
-    const art = await readArt(file).catch(() => null);
-    if (!art) return;
-    const slot: Slot = art.ratio > 1.6 ? 'lock' : 'sym';
-    setArt(slot, art);
-    store.set(slot, JSON.stringify(art));
-  });
-  all<HTMLButtonElement>('[data-clear]').forEach((b) =>
-    b.addEventListener('click', () => {
-      const slot = b.dataset.clear as Slot;
-      setArt(slot, null);
-      store.set(slot, null);
-    }),
-  );
+  let state = initial();
+  const locked = new Set<Role>();
 
-  const toneButtons = all<HTMLButtonElement>('[data-tone-group] button');
-  const setTone = (tone: string) => {
-    studio.dataset.tone = tone;
-    toneButtons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tone === tone)));
-  };
-  toneButtons.forEach((b) =>
-    b.addEventListener('click', () => {
-      setTone(b.dataset.tone!);
-      store.set('tone', b.dataset.tone!);
-    }),
-  );
+  /** Of the brand's own background and text, whichever reads on `fill`; plain black or white if neither does. */
+  function onColor(fill: string) {
+    const best = [state.colors.bg, state.colors.text].sort((a, b) => contrast(b, fill) - contrast(a, fill))[0];
+    return contrast(best, fill) >= 4.5 ? best : inkOn(fill);
+  }
 
-  // Type: heading and body faces from Google Fonts or the visitor's own files, plus weight, tracking and corners.
-  const pairings: Pairing[] = JSON.parse(studio.dataset.pairings!);
-  const panel = document.getElementById('type-panel') as HTMLDetailsElement;
-  const pairingSelect = panel.querySelector<HTMLSelectElement>('select[name=pairing]')!;
-  const ranges = Object.fromEntries(
-    ['weight', 'track', 'radius'].map((n) => [n, panel.querySelector<HTMLInputElement>(`input[name=${n}]`)!]),
-  ) as Record<'weight' | 'track' | 'radius', HTMLInputElement>;
-  const WEIGHTS: Record<number, string> = {
-    300: 'Light', 400: 'Regular', 500: 'Medium', 600: 'Semibold', 700: 'Bold', 800: 'Extrabold', 900: 'Black',
-  };
-  const fromPairing = (p: Pairing, radius = 4): TypeState => ({
-    heading: { source: 'google', family: p.heading },
-    body: { source: 'google', family: p.body },
-    weight: p.weight,
-    track: p.track,
-    radius,
-  });
-  let type: TypeState = fromPairing(pairings[0]);
+  /** Text and fill each role's contrast is judged on. */
+  function pairFor(role: Role): [string, string] | null {
+    const c = state.colors;
+    if (role === 'surface') return [c.text, c.surface];
+    if (role === 'text' || role === 'muted') return [c[role], c.bg];
+    if (role === 'accent' || role === 'accent2') return [onColor(c[role]), c[role]];
+    return null;
+  }
 
-  // Google serves a family only for weights it has, so ask for the widest range first and narrow down.
-  const loaded = new Set(['Schibsted Grotesk', 'Fraunces', 'DM Sans', 'Instrument Serif']);
-  const AXES = ['wght@100..900', 'wght@200..900', 'wght@300..900', 'wght@400..900', 'wght@200..800', 'wght@300..800',
-    'wght@400..800', 'wght@300..700', 'wght@400..700', 'wght@400;700', ''];
-  const sheet = (href: string) =>
+  const quote = (family: string) => `"${family.replace(/["\\]/g, '')}"`;
+  const stack = (f: Font) => `${quote(f.family)}, ui-sans-serif, system-ui, sans-serif`;
+
+  // ---- Fonts -------------------------------------------------------------
+
+  const googleLoads = new Map<string, Promise<string | null>>();
+  /** Stylesheet URL that worked for each loaded Google family, for the CSS export. */
+  const googleHrefs = new Map<string, string>();
+  const uploaded = new Set<string>();
+
+  const addStylesheet = (href: string) =>
     new Promise<boolean>((resolve) => {
       const link = Object.assign(document.createElement('link'), { rel: 'stylesheet', href });
       link.onload = () => resolve(true);
@@ -993,254 +639,550 @@ const tileText = (k: number) => {
       };
       document.head.append(link);
     });
-  async function loadGoogle(family: string) {
-    if (loaded.has(family)) return true;
+
+  // The v1 CSS endpoint skips weights a family doesn't have instead of failing,
+  // so one request gets every weight there is.
+  async function fetchGoogle(family: string) {
     const name = encodeURIComponent(family).replace(/%20/g, '+');
-    for (const axis of AXES) {
-      if (await sheet(`https://fonts.googleapis.com/css2?family=${name}${axis ? `:${axis}` : ''}&display=swap`)) {
-        loaded.add(family);
-        return true;
-      }
-    }
-    return false;
+    const href = `https://fonts.googleapis.com/css?family=${name}:100,200,300,400,500,600,700,800,900&display=swap`;
+    if (!(await addStylesheet(href))) return null;
+    await document.fonts.load(`400 1em ${quote(family)}`).catch(() => {});
+    googleHrefs.set(family, href);
+    return href;
   }
 
-  async function loadFile(choice: FontChoice) {
-    if (!choice.data || loaded.has(choice.family)) return;
-    const face = new FontFace(choice.family, `url(${choice.data})`);
-    document.fonts.add(await face.load());
-    loaded.add(choice.family);
+  function loadGoogle(family: string) {
+    if (!googleLoads.has(family)) googleLoads.set(family, fetchGoogle(family));
+    return googleLoads.get(family)!;
   }
 
-  const readDataUrl = (file: File) =>
-    new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
+  // Uploaded font files live in IndexedDB so they survive a reload.
+  function fontStore(mode: IDBTransactionMode, name: 'fonts' | 'logos' = 'fonts') {
+    return new Promise<IDBObjectStore>((resolve, reject) => {
+      const req = indexedDB.open('cores-brand-fonts', 2);
+      req.onupgradeneeded = () => {
+        for (const store of ['fonts', 'logos'])
+          if (!req.result.objectStoreNames.contains(store)) req.result.createObjectStore(store);
+      };
+      req.onsuccess = () => resolve(req.result.transaction(name, mode).objectStore(name));
+      req.onerror = () => reject(req.error);
+    });
+  }
+  const done = <T,>(req: IDBRequest<T>) =>
+    new Promise<T>((resolve, reject) => {
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
     });
 
-  function fontUI(role: FontRole) {
-    const box = panel.querySelector<HTMLElement>(`[data-role=${role}]`)!;
-    return {
-      box,
-      input: box.querySelector<HTMLInputElement>('.tp-input')!,
-      file: box.querySelector<HTMLLabelElement>('.tp-file')!,
-      fileInput: box.querySelector<HTMLInputElement>('input[type=file]')!,
-      status: box.querySelector<HTMLElement>('[data-status]')!,
-      sources: box.querySelectorAll<HTMLButtonElement>('[data-source]'),
+  interface StoredFont {
+    family: string;
+    data: ArrayBuffer;
+    variable: boolean;
+  }
+
+  /** Variable fonts get the full weight range so the weight slider moves them. */
+  function looksVariable(data: ArrayBuffer, fileName: string) {
+    if (/variable|\bvf\b|\[.*wght.*\]/i.test(fileName)) return true;
+    const bytes = new Uint8Array(data, 0, Math.min(data.byteLength, 4096));
+    const head = String.fromCharCode(...bytes);
+    return !head.startsWith('wOF2') && head.includes('fvar');
+  }
+
+  async function registerFont({ family, data, variable }: StoredFont) {
+    const face = new FontFace(family, data, variable ? { weight: '100 900' } : {});
+    await face.load();
+    document.fonts.add(face);
+    uploaded.add(family);
+    fillUploadSelects();
+  }
+
+  async function restoreUploads() {
+    try {
+      const fonts = await done((await fontStore('readonly')).getAll() as IDBRequest<StoredFont[]>);
+      await Promise.all(fonts.map((f) => registerFont(f).catch(() => {})));
+    } catch {}
+  }
+
+  async function addUpload(slot: Slot, file: File) {
+    const status = $(`[data-slot=${slot}] .font-status`);
+    status.dataset.state = '';
+    status.textContent = `Reading ${file.name}…`;
+    const family = file.name
+      .replace(/\.(woff2?|ttf|otf)$/i, '')
+      .replace(/\[.*?\]/g, '')
+      .replace(/[-_]+/g, ' ')
+      .replace(/["\\]/g, '')
+      .trim();
+    try {
+      const data = await file.arrayBuffer();
+      const font = { family, data, variable: looksVariable(data, file.name) };
+      await registerFont(font);
+      try {
+        await done((await fontStore('readwrite')).put(font, family));
+      } catch {}
+    } catch {
+      status.dataset.state = 'error';
+      status.textContent = 'Could not read that file. Use a .woff2, .woff, .ttf or .otf font.';
+      return;
+    }
+    setFont(slot, { source: 'upload', family });
+  }
+
+  function fillUploadSelects() {
+    const names = [...uploaded].sort();
+    for (const slot of SLOTS) {
+      const select = $<HTMLSelectElement>(`[data-slot=${slot}] .uploaded`);
+      select.replaceChildren(
+        ...(names.length ? names : ['']).map((n) =>
+          Object.assign(document.createElement('option'), { value: n, textContent: n || 'No fonts uploaded yet' }),
+        ),
+      );
+      select.disabled = !names.length;
+      if (state[slot].source === 'upload') select.value = state[slot].family;
+    }
+  }
+
+  async function setFont(slot: Slot, font: Font) {
+    state[slot] = font;
+    syncFontControls(slot);
+    render();
+    const status = $(`[data-slot=${slot}] .font-status`);
+    if (font.source === 'upload') {
+      const here = uploaded.has(font.family);
+      status.dataset.state = here ? 'ok' : 'error';
+      status.textContent = here ? 'From your file' : `${font.family} isn't in this browser. Upload the file again.`;
+      return;
+    }
+    status.dataset.state = '';
+    status.textContent = 'Loading…';
+    const ok = Boolean(await loadGoogle(font.family));
+    if (state[slot] !== font) return;
+    status.dataset.state = ok ? 'ok' : 'error';
+    status.textContent = ok ? 'From Google Fonts' : `${font.family} isn't on Google Fonts. Check the spelling.`;
+    render();
+  }
+
+  // ---- Logo --------------------------------------------------------------
+
+  let logoUrl = '';
+
+  function showLogoOption() {
+    const opt = $<HTMLButtonElement>('[data-logo=upload]');
+    opt.hidden = !logoUrl;
+    $<HTMLImageElement>('img', opt).src = logoUrl;
+  }
+
+  async function restoreLogo() {
+    try {
+      logoUrl = (await done((await fontStore('readonly', 'logos')).get('logo') as IDBRequest<string | undefined>)) ?? '';
+    } catch {}
+    showLogoOption();
+  }
+
+  function addLogo(file: File) {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      logoUrl = String(reader.result);
+      showLogoOption();
+      update(() => (state.logo = 'upload'));
+      try {
+        await done((await fontStore('readwrite', 'logos')).put(logoUrl, 'logo'));
+      } catch {}
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // ---- Colors ------------------------------------------------------------
+
+  const rand = (lo: number, hi: number) => lo + Math.random() * (hi - lo);
+
+  /** A neutral ramp tinted toward one hue, plus two accents, keeping the current light or dark mode. */
+  function generate() {
+    const dark = oklch(state.colors.bg).l < 0.5;
+    const hue = rand(0, 360);
+    const tint = hue + rand(-25, 25);
+    const n = rand(0.008, 0.03);
+    const next: Record<Role, string> = dark
+      ? {
+          bg: oklchToHex(rand(0.14, 0.2), n, tint),
+          surface: oklchToHex(rand(0.24, 0.29), n * 1.4, tint),
+          text: oklchToHex(0.95, n * 0.6, tint),
+          muted: '',
+          accent: oklchToHex(rand(0.68, 0.78), rand(0.13, 0.2), hue),
+          accent2: oklchToHex(rand(0.55, 0.85), rand(0.08, 0.16), hue + [120, 150, 180, 210][Math.floor(rand(0, 4))]),
+        }
+      : {
+          bg: oklchToHex(rand(0.95, 0.985), n, tint),
+          surface: oklchToHex(rand(0.89, 0.93), n * 1.6, tint),
+          text: oklchToHex(rand(0.18, 0.25), n * 1.2, tint),
+          muted: '',
+          accent: oklchToHex(rand(0.55, 0.68), rand(0.14, 0.22), hue),
+          accent2: oklchToHex(rand(0.45, 0.85), rand(0.08, 0.17), hue + [120, 150, 180, 210][Math.floor(rand(0, 4))]),
+        };
+    for (const r of ROLES) if (locked.has(r)) next[r] = state.colors[r];
+    if (!locked.has('muted')) next.muted = mutedFor(next.text, next.bg);
+    state.colors = next;
+  }
+
+  function invert() {
+    const { bg, text } = state.colors;
+    state.colors = {
+      ...state.colors,
+      bg: text,
+      text: bg,
+      surface: mix(text, bg, 0.1),
+      muted: mutedFor(bg, text),
     };
   }
 
-  function showSource(role: FontRole, source: FontChoice['source']) {
-    const ui = fontUI(role);
-    ui.sources.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.source === source)));
-    ui.input.hidden = source !== 'google';
-    ui.file.hidden = source !== 'file';
+  // ---- Rendering ---------------------------------------------------------
+
+  function ratioLabel(role: Role) {
+    const pair = pairFor(role);
+    if (!pair) return { text: '', fail: false };
+    const ratio = contrast(...pair);
+    const level = wcagLevel(ratio);
+    return { text: `${ratio.toFixed(1)}:1 ${level ?? 'Low'}`, fail: !level || level === 'AA large' };
   }
 
-  function applyType(save = true) {
-    const { heading, body, weight, track, radius } = type;
-    const s = studio.style;
-    s.setProperty('--display', `'${heading.family}', ui-serif, serif`);
-    s.setProperty('--body', `'${body.family}', ui-sans-serif, system-ui, sans-serif`);
-    s.setProperty('--display-weight', String(weight));
-    s.setProperty('--track', `${track}em`);
-    s.setProperty('--radius', `${radius}px`);
+  function css() {
+    const { colors } = state;
+    const imports = [...new Set(SLOTS.map((s) => state[s]).filter((f) => f.source === 'google').map((f) => googleHrefs.get(f.family)))]
+      .filter(Boolean)
+      .map((href) => `@import url("${href}");`);
+    const prefix = slugify(state.name) || 'brand';
+    const lines = [
+      ['background', colors.bg],
+      ['surface', colors.surface],
+      ['text', colors.text],
+      ['muted', colors.muted],
+      ['accent', colors.accent],
+      ['on-accent', onColor(colors.accent)],
+      ['accent-2', colors.accent2],
+      ['on-accent-2', onColor(colors.accent2)],
+      ['radius', `${state.radius}px`],
+      ['font-heading', stack(state.head)],
+      ['font-body', stack(state.body)],
+      ['heading-weight', String(state.weight)],
+      ['heading-tracking', `${state.tracking}em`],
+    ].map(([k, v]) => `  --${prefix}-${k}: ${v};`);
+    return [...imports, ...(imports.length ? [''] : []), ':root {', ...lines, '}'].join('\n');
+  }
 
-    ranges.weight.value = String(weight);
-    ranges.track.value = String(track);
-    ranges.radius.value = String(radius);
-    panel.querySelector('[data-out=weight]')!.textContent = String(weight);
-    panel.querySelector('[data-out=track]')!.textContent = `${track.toFixed(3)}em`;
-    panel.querySelector('[data-out=radius]')!.textContent = `${radius}px`;
+  // The wordmark fills the title card's width whatever the name and typeface.
+  const card = $('#title-card');
+  const measure = $('.tc-measure', card);
+  function fitMark() {
+    const w = measure.getBoundingClientRect().width;
+    if (!w) return;
+    const size = Math.min((card.clientWidth * 0.92 * 100) / w, card.clientHeight * 0.78);
+    card.style.setProperty('--mark', `${size}px`);
+  }
+  new ResizeObserver(fitMark).observe(card);
+  document.fonts.addEventListener('loadingdone', fitMark);
 
-    for (const role of ['heading', 'body'] as const) {
-      const ui = fontUI(role);
-      const c = type[role];
-      showSource(role, c.source);
-      if (c.source === 'google') {
-        ui.input.value = c.family;
-        ui.status.textContent = 'From Google Fonts';
-      } else {
-        ui.file.querySelector('span')!.textContent = c.label ?? 'Choose a font file';
-        ui.status.textContent = c.label ? `From your file${c.data ? '' : ' (not saved, too large)'}` : 'Upload .woff2, .woff, .ttf or .otf';
+  // Whole-palette changes sweep across the bands; dragging a single picker stays instant.
+  let wipeTimer: number | undefined;
+  function wipe() {
+    preview.classList.add('wiping');
+    clearTimeout(wipeTimer);
+    wipeTimer = window.setTimeout(() => preview.classList.remove('wiping'), 1200);
+  }
+
+  function render() {
+    const { colors } = state;
+    const vars: Record<string, string> = {
+      '--bg': colors.bg,
+      '--surface': colors.surface,
+      '--text': colors.text,
+      '--muted': colors.muted,
+      '--accent': colors.accent,
+      '--accent2': colors.accent2,
+      '--on-accent': onColor(colors.accent),
+      '--on-accent2': onColor(colors.accent2),
+      '--on-surface': colors.text,
+      '--head': stack(state.head),
+      '--body': stack(state.body),
+      '--hw': String(state.weight),
+      '--track': `${state.tracking}em`,
+      '--radius': `${state.radius}px`,
+    };
+    for (const [k, v] of Object.entries(vars)) preview.style.setProperty(k, v);
+
+    for (const role of ROLES) {
+      const row = $(`.role[data-role=${role}]`);
+      $<HTMLInputElement>('input[type=color]', row).value = colors[role].toLowerCase();
+      const hex = $<HTMLInputElement>('.hex-in', row);
+      if (document.activeElement !== hex) hex.value = colors[role];
+      hex.removeAttribute('aria-invalid');
+      const lock = $('.lock', row);
+      lock.setAttribute('aria-pressed', String(locked.has(role)));
+      const { text, fail } = ratioLabel(role);
+      for (const el of [$('.ratio', row), $(`[data-band=${role}] .band-ratio`)]) {
+        el.textContent = text;
+        el.toggleAttribute('data-fail', fail);
       }
+      const band = $(`[data-band=${role}]`);
+      const on = role === 'text' || role === 'muted' ? colors.bg : (pairFor(role)?.[0] ?? colors.text);
+      band.style.setProperty('--c', colors[role]);
+      band.style.setProperty('--on', on);
+      $('.band-hex', band).textContent = colors[role];
+      $(`[data-mark=${role}]`).style.color = on;
     }
 
-    const hName = heading.label ?? heading.family;
-    const bName = body.label ?? body.family;
-    const same = hName === bName;
-    panel.querySelector('[data-type-summary]')!.textContent = same ? hName : `${hName} / ${bName}`;
-    setText('[data-font=name]', hName);
-    setText('[data-font=weights]', `Headings ${WEIGHTS[weight] ?? weight} · Body Regular`);
-    setText('[data-font=pair]', same ? 'one family, no exceptions' : `${bName} · interface, tables, body`);
-    setText('[data-font=track]', `${+(track * 100).toFixed(1)}%`.replace('-', '−'));
-    setText(
-      '[data-font=note]',
-      same
-        ? `${hName} carries every headline and the body copy too. Headlines sit at ${weight}, tracked ${+(track * 100).toFixed(1)}%.`
-        : `${hName} carries every headline at ${weight}. ${bName} takes everything functional: labels, tables and body copy. Nothing else competes on the page.`,
+    // The Cores mark in the nav wears the palette being tested.
+    const ramp = logoRamp(ROLES.map((r) => colors[r]));
+    [ramp.ground, ...ramp.bands].forEach((fill, i) => (homeTones[i].style.fill = fill));
+
+    const uploadedLogo = state.logo === 'upload' && logoUrl;
+    preview.dataset.logo = uploadedLogo ? 'upload' : 'mark';
+    const symbol = `#mark-${state.logo === 'upload' ? DEFAULT.logo : state.logo}`;
+    document.querySelectorAll('[data-mark-use]').forEach((u) => u.setAttribute('href', symbol));
+    if (uploadedLogo) document.querySelectorAll('[data-mark-img]').forEach((img) => img.setAttribute('href', logoUrl));
+    document.querySelectorAll('[data-logo]').forEach((b) => b.setAttribute('aria-pressed', String(b.getAttribute('data-logo') === (uploadedLogo ? 'upload' : symbol.slice(6)))));
+    const pick = $('#logo-pick');
+    pick.style.setProperty('--accent', colors.accent);
+    pick.style.setProperty('--accent2', colors.accent2);
+
+    const name = state.name.trim() || 'Untitled';
+    document.querySelectorAll('[data-brand-name]').forEach((el) => (el.textContent = name));
+    $('[data-brand-initial]').textContent = [...name][0];
+    for (const slot of SLOTS) {
+      $(`[data-font=${slot}]`).textContent = state[slot].family;
+      $(`[data-font-source=${slot}]`).textContent = state[slot].source === 'google' ? 'Google Fonts' : 'Your file';
+    }
+    $('#weight-out').textContent = String(state.weight);
+    $('#tracking-out').textContent = `${state.tracking > 0 ? '+' : ''}${state.tracking.toFixed(3)}em`;
+    $('#radius-out').textContent = `${state.radius}px`;
+
+    fitMark();
+    $('#copy-css').dataset.copy = css();
+    $('#copy-link').dataset.copy = `${location.origin}${location.pathname}#b=${encode(state)}`;
+    try {
+      localStorage.setItem(CURRENT, JSON.stringify(state));
+    } catch {}
+  }
+
+  function syncFontControls(slot: Slot) {
+    const box = $(`[data-slot=${slot}]`);
+    const { source, family } = state[slot];
+    box.querySelectorAll<HTMLButtonElement>('[data-source]').forEach((b) =>
+      b.setAttribute('aria-pressed', String(b.dataset.source === source)),
     );
-    fitTitle();
-    if (save) store.set('type', JSON.stringify(type));
+    box.querySelectorAll<HTMLElement>('[data-pane]').forEach((p) => (p.hidden = p.dataset.pane !== source));
+    if (source === 'google') $<HTMLInputElement>('.family', box).value = family;
+    else $<HTMLSelectElement>('.uploaded', box).value = family;
   }
 
-  async function setFamily(role: FontRole, family: string) {
-    const ui = fontUI(role);
-    family = family.trim();
-    if (!family) return;
-    ui.status.textContent = 'Loading…';
-    if (await loadGoogle(family)) {
-      type[role] = { source: 'google', family };
-      pairingSelect.value = '';
-      applyType();
-    } else {
-      ui.status.textContent = `“${family}” isn’t on Google Fonts`;
+  function syncControls() {
+    $<HTMLInputElement>('#name').value = state.name;
+    $<HTMLInputElement>('#weight').value = String(state.weight);
+    $<HTMLInputElement>('#tracking').value = String(state.tracking);
+    $<HTMLInputElement>('#radius').value = String(state.radius);
+    SLOTS.forEach(syncFontControls);
+  }
+
+  function useBrand(b: Brand) {
+    state = valid(structuredClone(b));
+    syncControls();
+    render();
+    SLOTS.forEach((s) => setFont(s, state[s]));
+  }
+
+  // ---- Toast (shared with the copy handler in Base) ------------------------
+
+  let toastTimer: number | undefined;
+  function notify(message: string) {
+    const toast = $('#toast');
+    $('i', toast).style.display = 'none';
+    $('span', toast).textContent = message;
+    toast.setAttribute('data-show', '');
+    clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(() => toast.removeAttribute('data-show'), 1600);
+  }
+
+  // ---- Saved brands ------------------------------------------------------
+
+  function readSaved(): Brand[] {
+    try {
+      const list = JSON.parse(localStorage.getItem(SAVED) ?? '[]');
+      return Array.isArray(list) ? list.map(valid) : [];
+    } catch {
+      return [];
     }
   }
 
-  for (const role of ['heading', 'body'] as const) {
-    const ui = fontUI(role);
-    ui.input.addEventListener('change', () => setFamily(role, ui.input.value));
-    ui.sources.forEach((b) => b.addEventListener('click', () => showSource(role, b.dataset.source as FontChoice['source'])));
-    ui.fileInput.addEventListener('change', async () => {
-      const file = ui.fileInput.files?.[0];
-      ui.fileInput.value = '';
-      if (!file) return;
-      ui.status.textContent = 'Loading…';
+  function writeSaved(list: Brand[]) {
+    try {
+      localStorage.setItem(SAVED, JSON.stringify(list));
+    } catch {}
+    renderSaved();
+  }
+
+  function renderSaved() {
+    const list = readSaved();
+    const ul = $('#saved');
+    const tpl = $<HTMLTemplateElement>('#saved-item');
+    ul.replaceChildren(
+      ...list.map((b, i) => {
+        const li = tpl.content.firstElementChild!.cloneNode(true) as HTMLElement;
+        $('.saved-strip', li).style.background = `linear-gradient(90deg, ${ROLES.map(
+          (r, j) => `${b.colors[r]} ${(j / ROLES.length) * 100}% ${((j + 1) / ROLES.length) * 100}%`,
+        ).join(', ')})`;
+        $('.saved-name', li).textContent = b.name || 'Untitled';
+        $('.saved-fonts', li).textContent = `${b.head.family} / ${b.body.family}`;
+        $('.saved-load', li).addEventListener('click', () => {
+          wipe();
+          useBrand(b);
+          notify(`Loaded ${b.name || 'Untitled'}`);
+        });
+        const del = $('.saved-del', li);
+        del.setAttribute('aria-label', `Delete ${b.name || 'Untitled'}`);
+        del.addEventListener('click', () => writeSaved(readSaved().filter((_, j) => j !== i)));
+        return li;
+      }),
+    );
+    $('#saved-empty').hidden = list.length > 0;
+  }
+
+  // ---- Events ------------------------------------------------------------
+
+  const update = (fn: () => void) => {
+    fn();
+    render();
+  };
+
+  document.querySelectorAll<HTMLButtonElement>('[data-logo]').forEach((b) =>
+    b.addEventListener('click', () => update(() => (state.logo = b.dataset.logo as Logo))),
+  );
+  $<HTMLInputElement>('.logo-file input').addEventListener('change', (e) => {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (file) addLogo(file);
+    input.value = '';
+  });
+
+  $('#name').addEventListener('input', (e) => update(() => (state.name = (e.target as HTMLInputElement).value)));
+
+  for (const role of ROLES) {
+    const row = $(`.role[data-role=${role}]`);
+    $('input[type=color]', row).addEventListener('input', (e) =>
+      update(() => (state.colors[role] = (e.target as HTMLInputElement).value.toUpperCase())),
+    );
+    const hex = $<HTMLInputElement>('.hex-in', row);
+    hex.addEventListener('input', () => {
+      let v = hex.value.trim().replace(/^#?/, '#').toUpperCase();
+      if (/^#[0-9A-F]{3}$/.test(v)) v = `#${[...v.slice(1)].map((c) => c + c).join('')}`;
+      if (isHex(v)) update(() => (state.colors[role] = v));
+      else hex.setAttribute('aria-invalid', 'true');
+    });
+    hex.addEventListener('blur', render);
+    $('.lock', row).addEventListener('click', () =>
+      update(() => (locked.has(role) ? locked.delete(role) : locked.add(role))),
+    );
+  }
+
+  // Clicking a band opens that role's color picker.
+  for (const role of ROLES) {
+    $(`[data-band=${role}]`).addEventListener('click', () => {
+      const input = $<HTMLInputElement>(`.role[data-role=${role}] input[type=color]`);
       try {
-        const label = file.name.replace(/\.[^.]+$/, '');
-        const family = `Brand ${role} ${label}`;
-        const face = new FontFace(family, await file.arrayBuffer());
-        document.fonts.add(await face.load());
-        loaded.add(family);
-        // Keep the file for next time only when it is small enough for localStorage.
-        const data = file.size < 1_500_000 ? await readDataUrl(file) : undefined;
-        type[role] = { source: 'file', family, label, data };
-        pairingSelect.value = '';
-        applyType();
+        input.showPicker();
       } catch {
-        ui.status.textContent = 'That file isn’t a font this browser can read';
+        input.focus();
       }
     });
   }
 
-  pairingSelect.addEventListener('change', async () => {
-    const p = pairings[+pairingSelect.value];
-    if (!pairingSelect.value || !p) return;
-    await Promise.all([loadGoogle(p.heading), loadGoogle(p.body)]);
-    type = fromPairing(p, type.radius);
-    applyType();
+  const starterSelect = $<HTMLSelectElement>('#starter');
+  starterSelect.addEventListener('change', () => {
+    const s = starters[Number(starterSelect.value)];
+    if (!s) return;
+    wipe();
+    update(() => (state.colors = { ...s.colors }));
   });
-  ranges.weight.addEventListener('input', () => {
-    type.weight = +ranges.weight.value;
-    applyType();
-  });
-  ranges.track.addEventListener('input', () => {
-    type.track = +ranges.track.value;
-    applyType();
-  });
-  ranges.radius.addEventListener('input', () => {
-    type.radius = +ranges.radius.value;
-    applyType();
-  });
-  panel.addEventListener('toggle', () => store.set('type-open', panel.open ? '1' : null));
 
-  // Palette controls
-  let playing: number | undefined;
-  const playButton = studio.querySelector<HTMLButtonElement>('[data-act=play]')!;
-  const stop = () => {
-    clearInterval(playing);
-    playing = undefined;
-    playButton.setAttribute('aria-pressed', 'false');
-    playButton.querySelector('span')!.textContent = 'Play';
+  const regenerate = () => {
+    starterSelect.value = '';
+    wipe();
+    update(generate);
   };
-
-  studio.addEventListener('click', (e) => {
-    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
-    if (!btn) return;
-    if (btn.dataset.step) select(state.index + +btn.dataset.step);
-    else if (btn.dataset.index) select(+btn.dataset.index);
-    else if (btn.dataset.act === 'shift') {
-      state.shift++;
-      render();
-    } else if (btn.dataset.act === 'shuffle') {
-      select(state.index + 1 + Math.floor(Math.random() * (palettes.length - 1)));
-    } else if (btn.dataset.act === 'reset') select(state.index, { scroll: false });
-    else if (btn.dataset.act === 'play') {
-      if (playing) return stop();
-      playButton.setAttribute('aria-pressed', 'true');
-      playButton.querySelector('span')!.textContent = 'Pause';
-      select(state.index + 1);
-      playing = window.setInterval(() => !document.hidden && select(state.index + 1), 3200);
-    }
+  $('#generate').addEventListener('click', regenerate);
+  $('#invert').addEventListener('click', () => {
+    starterSelect.value = '';
+    wipe();
+    update(invert);
   });
-
-  // Editing a swatch repaints at once, without the ripple, until the picker closes.
-  studio.addEventListener('input', (e) => {
-    const input = e.target as HTMLInputElement;
-    if (input.dataset.edit === undefined) return;
-    studio.dataset.instant = '';
-    const k = +input.dataset.edit;
-    state.colors[k] = { ...state.colors[k], hex: input.value.toUpperCase() };
-    state.edited = true;
-    render();
-  });
-  studio.addEventListener('change', (e) => {
-    if ((e.target as HTMLElement).dataset.edit !== undefined) delete studio.dataset.instant;
-  });
-
   document.addEventListener('keydown', (e) => {
     const t = e.target as HTMLElement;
-    if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || e.metaKey || e.ctrlKey || e.altKey) return;
-    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-      e.preventDefault();
-      select(state.index + (e.key === 'ArrowLeft' ? -1 : 1));
-    }
+    if (e.code !== 'Space' || e.repeat || t.closest('input, select, textarea, button, [contenteditable]')) return;
+    e.preventDefault();
+    regenerate();
   });
 
-  // Blocks rise in as they reach the viewport.
-  const seen = new IntersectionObserver(
-    (entries) =>
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        entry.target.classList.add('seen');
-        seen.unobserve(entry.target);
+  for (const slot of SLOTS) {
+    const box = $(`[data-slot=${slot}]`);
+    box.querySelectorAll<HTMLButtonElement>('[data-source]').forEach((b) =>
+      b.addEventListener('click', () => {
+        box.querySelectorAll('[data-source]').forEach((o) => o.setAttribute('aria-pressed', String(o === b)));
+        box.querySelectorAll<HTMLElement>('[data-pane]').forEach((p) => (p.hidden = p.dataset.pane !== b.dataset.source));
+        // Switching to your files picks one straight away when there is one.
+        const select = $<HTMLSelectElement>('.uploaded', box);
+        if (b.dataset.source === 'upload' && select.value) setFont(slot, { source: 'upload', family: select.value });
+        if (b.dataset.source === 'google') {
+          const family = $<HTMLInputElement>('.family', box).value.trim();
+          if (family) setFont(slot, { source: 'google', family });
+        }
       }),
-    { rootMargin: '0px 0px -10% 0px' },
-  );
-  all('.block').forEach((b) => seen.observe(b));
+    );
+    const family = $<HTMLInputElement>('.family', box);
+    family.addEventListener('change', () => {
+      const v = family.value.trim().replace(/\s+/g, ' ');
+      if (v && v !== state[slot].family) setFont(slot, { source: 'google', family: v });
+    });
+    $<HTMLSelectElement>('.uploaded', box).addEventListener('change', (e) => {
+      const v = (e.target as HTMLSelectElement).value;
+      if (v) setFont(slot, { source: 'upload', family: v });
+    });
+    $<HTMLInputElement>('input[type=file]', box).addEventListener('change', (e) => {
+      const input = e.target as HTMLInputElement;
+      const file = input.files?.[0];
+      if (file) addUpload(slot, file);
+      input.value = '';
+    });
+  }
 
-  // Restore this browser's last brand, then the palette from the URL or last visit.
-  nameInput.value = store.get('name') ?? nameInput.value;
-  tagInput.value = store.get('tagline') ?? tagInput.value;
-  applyName();
-  applyTagline();
-  for (const slot of ['sym', 'lock'] as Slot[]) {
-    try {
-      const art = JSON.parse(store.get(slot) ?? 'null');
-      if (art) setArt(slot, art);
-    } catch {}
+  const pairingSelect = $<HTMLSelectElement>('#pairing');
+  pairingSelect.addEventListener('change', () => {
+    const p = pairings[Number(pairingSelect.value)];
+    if (!p) return;
+    setFont('head', { source: 'google', family: p[0] });
+    setFont('body', { source: 'google', family: p[1] });
+  });
+
+  for (const [id, key] of [
+    ['weight', 'weight'],
+    ['tracking', 'tracking'],
+    ['radius', 'radius'],
+  ] as const) {
+    $(`#${id}`).addEventListener('input', (e) => update(() => (state[key] = Number((e.target as HTMLInputElement).value))));
   }
-  setTone(store.get('tone') ?? 'mono');
-  try {
-    const saved = JSON.parse(store.get('type') ?? 'null') as TypeState | null;
-    if (saved?.heading && saved.body) type = saved;
-  } catch {}
-  panel.open = store.get('type-open') === '1';
-  applyType(false);
-  for (const role of ['heading', 'body'] as const) {
-    const c = type[role];
-    (c.source === 'google' ? loadGoogle(c.family) : loadFile(c)).catch(() => {});
-  }
-  const wanted = new URLSearchParams(location.search).get('p') ?? store.get('palette');
-  const found = palettes.findIndex((p) => p.id === wanted);
-  select(found >= 0 ? found : state.index);
-  studio.dataset.ready = '';
+
+  $('#save').addEventListener('click', () => {
+    const name = state.name.trim() || 'Untitled';
+    const list = readSaved().filter((b) => (b.name.trim() || 'Untitled') !== name);
+    writeSaved([structuredClone(state), ...list]);
+    notify(`Saved ${name}`);
+  });
+
+  syncControls();
+  render();
+  renderSaved();
+  restoreUploads().then(() => SLOTS.forEach((s) => setFont(s, state[s])));
+  restoreLogo().then(render);
 </script>
 
-<style is:global>
+<style>
   .top {
     display: flex;
     justify-content: space-between;
@@ -1250,14 +1192,22 @@ const tileText = (k: number) => {
   }
 
   .top a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
     text-decoration: none;
-    font-weight: 500;
-  }
-
-  .top > a:first-child {
     font-weight: 800;
     font-size: var(--step-1);
     letter-spacing: -0.04em;
+  }
+
+  .home svg {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .home .tone {
+    transition: fill 600ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .top a:hover {
@@ -1265,2263 +1215,1988 @@ const tileText = (k: number) => {
     text-underline-offset: 3px;
   }
 
-  .studio {
-    --dur: 900ms;
-    --ease: cubic-bezier(0.65, 0, 0.25, 1);
-    --sym-mask: var(--sym-default);
-    --sym-src: var(--sym-default);
-    --sym-ratio: 1;
-    --lock-ratio: 4;
-  }
-
-  .studio[data-instant] {
-    --dur: 0ms;
+  .top span {
+    font-weight: 500;
   }
 
   .head {
     display: grid;
-    gap: 0.75rem;
-    padding-block: clamp(1.5rem, 5vw, 3.5rem) 1.75rem;
+    gap: 0.5rem;
+    padding-block: clamp(0.5rem, 2vw, 1.25rem) clamp(1rem, 2vw, 1.5rem);
   }
 
   h1 {
-    font-size: clamp(2.5rem, 7vw, 5.5rem);
+    font-size: clamp(2rem, 4vw, 3rem);
     font-weight: 800;
-    letter-spacing: -0.045em;
-    line-height: 0.92;
-  }
-
-  .lede {
-    max-width: 52ch;
-    color: var(--muted);
-  }
-
-  /* ---------- Artwork ---------- */
-
-  .sym,
-  .lock {
-    display: inline-block;
-    flex: none;
-    background-color: currentColor;
-    mask: var(--sym-mask) center / contain no-repeat;
-  }
-
-  .sym {
-    width: calc(1em * var(--sym-ratio));
-    height: 1em;
-  }
-
-  .lock {
-    mask-image: var(--lock-mask);
-    width: calc(1.2em * var(--lock-ratio));
-    max-width: 100%;
-    aspect-ratio: var(--lock-ratio);
-  }
-
-  .studio[data-tone='original'][data-sym='img'] .sym {
-    background: var(--sym-src) center / contain no-repeat;
-    mask: none;
-  }
-
-  .studio[data-tone='original'][data-lock='img'] .lock {
-    background: var(--lock-src) center / contain no-repeat;
-    mask: none;
-  }
-
-  .lockup {
-    display: inline-flex;
-    align-items: center;
-    max-width: 100%;
-    line-height: 1;
-    white-space: nowrap;
-  }
-
-  .lock-text {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3em;
-    min-width: 0;
-  }
-
-  .lock-text b {
-    font-weight: 800;
-    font-size: 0.95em;
     letter-spacing: -0.04em;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 0.95;
   }
 
-  .studio:not([data-lock='img']) .lock,
-  .studio[data-lock='img'] .lock-text {
-    display: none;
+  .head p {
+    color: var(--muted);
+    max-width: 60ch;
   }
 
-  /* ---------- Controls ---------- */
+  kbd {
+    padding: 0.05rem 0.4rem;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    background: var(--raised);
+    font: inherit;
+    font-size: 0.85em;
+    color: var(--ink);
+  }
 
-  .controls {
-    --delay: 0ms;
+  .lab {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 1rem;
+    grid-template-columns: minmax(19rem, 23rem) minmax(0, 1fr);
+    gap: clamp(1rem, 2.5vw, 2rem);
+    align-items: start;
+    padding-bottom: 5rem;
   }
 
-  /* Palette bar stays in reach while the board scrolls under it. */
-  .bar {
-    --delay: 0ms;
+  /* ---- Settings panel ---- */
+
+  .panel {
     position: sticky;
-    top: 0;
-    z-index: 5;
-    padding-block: 0.65rem;
-    background: color-mix(in srgb, var(--ground) 86%, transparent);
-    backdrop-filter: blur(14px) saturate(1.4);
-    border-bottom: 1px solid var(--rule);
+    top: 1rem;
+    max-height: calc(100dvh - 2rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    display: grid;
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    background: var(--raised);
   }
 
-  .control-row {
+  .group {
+    display: grid;
+    gap: 0.75rem;
+    padding: 1.1rem;
+  }
+
+  .group + .group {
+    border-top: 1px solid var(--rule);
+  }
+
+  .group-head {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
-    gap: 0.75rem 1.25rem;
-    width: 100%;
-  }
-
-  .uploads {
-    display: flex;
+    justify-content: space-between;
     gap: 0.5rem;
   }
 
-  .drop {
-    position: relative;
+  h2 {
+    font-size: var(--step-0);
+    letter-spacing: -0.01em;
   }
 
-  .drop label {
+  .actions,
+  .export {
     display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    padding: 0.35rem 0.85rem 0.35rem 0.35rem;
-    border: 1px dashed var(--rule);
-    border-radius: 12px;
-    background: var(--raised);
-    cursor: pointer;
-    transition:
-      border-color 160ms ease,
-      background-color 160ms ease,
-      scale 160ms ease;
+    gap: 0.35rem;
   }
 
-  .drop label:hover,
-  .drop[data-over] label {
+  .chip-btn {
+    padding: 0.35rem 0.85rem;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    background: var(--ground);
+    font-size: var(--step--1);
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 120ms ease;
+  }
+
+  .chip-btn:hover {
     border-color: var(--ink);
   }
 
-  .drop[data-over] label {
-    scale: 1.03;
-  }
-
-  .drop label:active {
+  .chip-btn:active {
     scale: 0.97;
   }
 
-  .drop label:has(input:focus-visible) {
-    outline: 2px solid var(--focus);
-    outline-offset: 2px;
-  }
-
-  .drop input {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    opacity: 0;
-  }
-
-  .drop-preview {
-    display: grid;
-    place-items: center;
-    width: 2.6rem;
-    height: 2.6rem;
-    border-radius: 8px;
-    background: var(--primary);
-    color: var(--on-primary);
-    font-size: 1.35rem;
-    overflow: hidden;
-  }
-
-  [data-drop='lock'] .drop-preview {
-    width: 5.5rem;
-    font-size: 0.8rem;
-    padding-inline: 0.4rem;
-  }
-
-  .drop-text {
-    display: grid;
-    line-height: 1.2;
-  }
-
-  .drop-text b {
-    font-weight: 700;
-    font-size: var(--step--1);
-  }
-
-  .drop-text small {
-    color: var(--muted);
-    font-size: 0.75rem;
-  }
-
-  .clear {
-    position: absolute;
-    top: -0.45rem;
-    right: -0.45rem;
-    width: 1.3rem;
-    height: 1.3rem;
-    padding: 0;
-    border: 0;
-    border-radius: 50%;
-    background: var(--ink);
-    color: transparent;
-    font-size: 0;
-    cursor: pointer;
-  }
-
-  .clear::before,
-  .clear::after {
-    content: '';
-    position: absolute;
-    inset: 50% 30%;
-    height: 1.5px;
-    background: var(--ground);
-    rotate: 45deg;
-  }
-
-  .clear::after {
-    rotate: -45deg;
-  }
-
-  .clear[hidden] {
-    display: none;
-  }
-
-  .fields {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.5rem;
-    flex: 1 1 22rem;
-  }
-
-  .field {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0 0.85rem;
-    height: 2.6rem;
-    border: 1px solid var(--rule);
-    border-radius: 999px;
-    background: var(--raised);
-    flex: 0 1 12rem;
-    min-width: 0;
-  }
-
-  .field.wide {
-    flex: 1 1 16rem;
-  }
-
-  .field:focus-within {
-    border-color: var(--ink);
-  }
-
-  .field span {
-    font-size: var(--step--1);
-    color: var(--muted);
-  }
-
-  .field input {
-    flex: 1;
-    min-width: 0;
-    border: 0;
-    background: none;
-    font-weight: 500;
-    outline: none;
-  }
-
-  .segment,
-  .actions {
-    display: flex;
-    gap: 0.25rem;
-  }
-
-  .segment[hidden] {
-    display: none;
-  }
-
-  .segment button,
-  .actions button {
-    padding: 0.45rem 0.9rem;
-    border: 1px solid var(--rule);
-    border-radius: 999px;
-    background: var(--raised);
-    font-size: var(--step--1);
-    font-weight: 500;
-    white-space: nowrap;
-    cursor: pointer;
-    transition:
-      border-color 160ms ease,
-      scale 120ms ease;
-  }
-
-  .segment button:hover,
-  .actions button:hover {
-    border-color: var(--ink);
-  }
-
-  .segment button:active,
-  .actions button:active,
-  .round:active {
-    scale: 0.96;
-  }
-
-  .segment button[aria-pressed='true'],
-  .actions button[aria-pressed='true'] {
+  .chip-btn.solid {
     border-color: var(--ink);
     background: var(--ink);
     color: var(--ground);
   }
 
-  .actions [hidden] {
+  .field {
+    display: grid;
+    gap: 0.3rem;
+    font-size: var(--step--1);
+  }
+
+  .field > span {
+    display: flex;
+    justify-content: space-between;
+    color: var(--muted);
+  }
+
+  .field output {
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  input[type='text'],
+  select {
+    width: 100%;
+    min-width: 0;
+    padding: 0.5rem 0.65rem;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    background: var(--ground);
+    font-size: var(--step--1);
+  }
+
+  input[type='text']:focus-visible,
+  select:focus-visible {
+    outline-offset: 0;
+  }
+
+  input[aria-invalid='true'] {
+    border-color: #c53d43;
+  }
+
+  input[type='range'] {
+    width: 100%;
+    accent-color: var(--ink);
+  }
+
+  /* Logo */
+  .logo-pick {
+    display: grid;
+    gap: 0.4rem;
+    margin: 0.35rem 0 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+  }
+
+  .logo-pick legend {
+    margin-bottom: 0.3rem;
+    font-weight: 400;
+    color: var(--muted);
+  }
+
+  .logo-opts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .logo-opts button {
+    display: grid;
+    place-items: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    padding: 0.45rem;
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    background: var(--ground);
+    cursor: pointer;
+  }
+
+  .logo-opts button[hidden] {
     display: none;
   }
 
-  .pick {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    min-width: 0;
-    flex: 0 1 auto;
+  .logo-opts button[aria-pressed='true'] {
+    border-color: var(--ink);
+    box-shadow: inset 0 0 0 1px var(--ink);
   }
 
-  .round {
+  .logo-opts svg,
+  .logo-opts img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .logo-file {
+    position: relative;
     display: grid;
     place-items: center;
-    flex: none;
-    width: 2.25rem;
-    height: 2.25rem;
-    padding: 0;
-    border: 1px solid var(--rule);
-    border-radius: 50%;
-    background: var(--raised);
+    padding: 0 0.75rem;
+    border: 1px dashed var(--muted);
+    border-radius: 8px;
+    font-size: var(--step--1);
+    font-weight: 500;
     cursor: pointer;
-    transition:
-      border-color 160ms ease,
-      scale 120ms ease;
   }
 
-  .round:hover {
+  .logo-file:hover {
     border-color: var(--ink);
   }
 
-  .round svg {
-    width: 14px;
-    height: 14px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.75;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+  .logo-file:focus-within {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
   }
 
-  .pname {
-    min-width: 9rem;
-    max-width: 16rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-weight: 700;
-    text-align: center;
-    text-decoration: none;
-  }
-
-  .pname:hover {
-    text-decoration: underline;
-    text-underline-offset: 3px;
-  }
-
-  .swatches {
-    display: flex;
-    flex: 1 1 12rem;
-    min-width: 0;
-    height: 2.25rem;
-    border-radius: 999px;
-    overflow: hidden;
-    box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.08);
-  }
-
-  .sw {
-    position: relative;
-    flex: 1 1 0;
-    min-width: 0.75rem;
-    background: var(--k);
+  .logo-file input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
     cursor: pointer;
-    transition: flex-grow 240ms var(--ease);
   }
 
-  .sw:hover {
-    flex-grow: 1.8;
+  /* Color roles */
+  .roles {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.35rem;
   }
 
-  .sw[hidden] {
-    display: none;
+  .role {
+    display: grid;
+    grid-template-columns: 2.25rem 1fr 5.5rem 1.75rem;
+    grid-template-areas: 'pick name hex lock' 'pick ratio hex lock';
+    align-items: center;
+    gap: 0 0.6rem;
   }
 
-  .sw input {
+  .pick {
+    grid-area: pick;
+    position: relative;
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+
+  .pick input {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
-    opacity: 0;
-    cursor: pointer;
-  }
-
-  .sw:has(input:focus-visible) {
-    outline: 2px solid var(--focus);
-    outline-offset: -4px;
-  }
-
-  /* Filmstrip of every palette */
-  .strip-wrap {
-    mask-image: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent);
-  }
-
-  .strip {
-    display: flex;
-    gap: 0.5rem;
-    overflow-x: auto;
-    padding: 0.25rem var(--gutter) 0.85rem;
-    scrollbar-width: none;
-    overscroll-behavior-x: contain;
-  }
-
-  .strip::-webkit-scrollbar {
-    display: none;
-  }
-
-  .mini {
-    position: relative;
-    flex: none;
-    display: grid;
-    grid-template-rows: 1fr auto;
-    width: 7.5rem;
-    height: 4.75rem;
     padding: 0;
-    border: 0;
-    border-radius: 10px;
-    overflow: hidden;
-    cursor: pointer;
-    font-size: 0.8rem;
-    transition:
-      translate 220ms var(--ease),
-      box-shadow 220ms ease;
-  }
-
-  .mini:hover {
-    translate: 0 -3px;
-  }
-
-  .mini[aria-selected='true'] {
-    box-shadow:
-      0 0 0 2px var(--ground),
-      0 0 0 4px var(--ink);
-  }
-
-  .mini .lockup {
-    place-self: center;
-    max-width: calc(100% - 1rem);
-  }
-
-  .mini-bar {
-    display: flex;
-    height: 0.5rem;
-  }
-
-  .mini-bar i {
-    flex: 1;
-  }
-
-  .mini-name {
-    position: absolute;
-    inset: auto 0 0.5rem;
-    padding-inline: 0.5rem;
-    font-size: 0.625rem;
-    font-weight: 500;
-    text-align: left;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    opacity: 0;
-    translate: 0 4px;
-    transition:
-      opacity 160ms ease,
-      translate 160ms ease;
-  }
-
-  .mini:hover .mini-name,
-  .mini:focus-visible .mini-name {
-    opacity: 0.85;
-    translate: 0 0;
-  }
-
-  /* ---------- Board: a deck of slides in the palette's colors ---------- */
-
-  .board {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: clamp(0.75rem, 2vw, 1.5rem);
-    padding-block: clamp(1.5rem, 4vw, 2.5rem) 5rem;
-  }
-
-  .block {
-    --delay: calc(var(--i, 0) * 70ms);
-    --grad: linear-gradient(200deg in oklab, var(--light), var(--primary) 50%, var(--deep));
-    --bg: var(--paper);
-    --fg: var(--text);
-    --soft: color-mix(in oklab, var(--fg) 58%, var(--bg));
-    --hair: color-mix(in oklab, var(--fg) 16%, var(--bg));
-    display: grid;
-    grid-template-rows: auto 1fr auto;
-    gap: clamp(1rem, 2vw, 1.5rem);
-    min-width: 0;
-    padding: clamp(1rem, 2.6vw, 2rem);
-    border-radius: 3px;
-    background: var(--bg);
-    color: var(--fg);
-    /* Hairline ring so a white slide still reads on the light site ground. */
-    box-shadow:
-      0 0 0 1px rgb(0 0 0 / 0.06),
-      0 24px 48px -32px rgb(0 0 0 / 0.45);
-  }
-
-  .block.dark {
-    --bg: var(--deep);
-    --fg: var(--on-deep);
-  }
-
-  .studio[data-ready] .block:not(.seen) {
-    opacity: 0;
-  }
-
-  .block.seen {
-    animation: rise 800ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  }
-
-  @keyframes rise {
-    from {
-      opacity: 0;
-      translate: 0 24px;
-    }
-  }
-
-  .span,
-  .cover {
-    grid-column: 1 / -1;
-  }
-
-  .bhead {
-    display: flex;
-    justify-content: space-between;
-    align-items: start;
-    gap: 1rem;
-  }
-
-  .bhead h2 {
-    font-size: clamp(1.5rem, 2.6vw, 2.125rem);
-    font-weight: 500;
-    letter-spacing: -0.035em;
-    line-height: 1;
-  }
-
-  .bhead p {
-    margin-top: 0.35rem;
-    font-size: 0.75rem;
-    color: var(--soft);
-  }
-
-  .bhead .meta {
-    margin: 0;
-    font-size: 0.6875rem;
-    line-height: 1.5;
-    text-align: right;
-  }
-
-  .bfoot {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.6875rem;
-    color: var(--soft);
-    font-variant-numeric: tabular-nums;
-  }
-
-  /* Hairline panel split into panes, as in a printed guideline. */
-  .panel {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
-    min-height: clamp(20rem, 32vw, 26rem);
-    border: 1px solid var(--hair);
-  }
-
-  .pane {
-    position: relative;
-    min-width: 0;
-    padding: clamp(0.85rem, 1.8vw, 1.35rem);
-  }
-
-  .pane + .pane {
-    border-left: 1px solid var(--hair);
-  }
-
-  .note {
-    max-width: 44ch;
-    font-size: 0.6875rem;
-    line-height: 1.6;
-    color: color-mix(in oklab, var(--fg) 80%, var(--bg));
-  }
-
-  .note b {
-    display: block;
-    margin-bottom: 0.35rem;
-    color: var(--fg);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    font-size: 0.625rem;
-  }
-
-  .pill {
-    padding: 0.45rem 0.9rem;
-    border: 1px solid var(--hair);
-    border-radius: 999px;
+    border: 1px solid rgb(0 0 0 / 0.12);
+    border-radius: 8px;
     background: none;
-    color: inherit;
-    font-size: var(--step--1);
-    font-weight: 500;
-    white-space: nowrap;
     cursor: pointer;
-    transition:
-      border-color 160ms ease,
-      scale 120ms ease;
   }
 
-  .pill:hover {
-    border-color: currentColor;
+  .pick input::-webkit-color-swatch-wrapper {
+    padding: 0;
   }
 
-  .pill:active {
-    scale: 0.96;
-  }
-
-  /* Cover */
-  @property --mx {
-    syntax: '<percentage>';
-    inherits: true;
-    initial-value: 70%;
-  }
-
-  .cover {
-    grid-template-rows: 1fr;
-    padding: clamp(0.5rem, 1.2vw, 0.875rem);
-  }
-
-  /* Declared on the element itself so the drifting --mx reaches the gradient. */
-  .meshy {
-    position: relative;
-    isolation: isolate;
-    background:
-      radial-gradient(70% 70% at var(--mx) 0%, var(--light), transparent 70%),
-      radial-gradient(60% 60% at 100% 100%, color-mix(in oklab, var(--accent) 70%, transparent), transparent 70%),
-      radial-gradient(90% 100% at 0% 100%, var(--deep) 15%, transparent 75%),
-      var(--primary);
-    animation: drift 16s ease-in-out infinite alternate;
-  }
-
-  .meshy::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background: var(--grain);
-    mix-blend-mode: overlay;
-    opacity: 0.55;
-    pointer-events: none;
-  }
-
-  @keyframes drift {
-    from {
-      --mx: 55%;
-    }
-    to {
-      --mx: 95%;
-    }
-  }
-
-  .banner {
-    position: relative;
-    container-type: inline-size;
-    isolation: isolate;
-    display: grid;
-    grid-template-rows: auto 1fr auto;
-    gap: 1rem;
-    aspect-ratio: 16 / 8;
-    min-height: 24rem;
-    padding: clamp(1.25rem, 3vw, 2.5rem);
-    overflow: hidden;
-    color: var(--bi0);
-    animation: bands 14s linear infinite;
-  }
-
-  .banner::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background: var(--grain);
-    mix-blend-mode: overlay;
-    opacity: 0.45;
-    pointer-events: none;
-  }
-
-  .bands {
-    position: absolute;
-    inset: 0;
-    z-index: -2;
-    display: flex;
-  }
-
-  .bands i {
-    flex-shrink: 1;
-    flex-basis: 0;
-    /* Overlap a hair so fractional widths never open a seam between bands. */
-    margin-right: -1px;
-    background: linear-gradient(180deg in oklab, var(--top), var(--bottom));
-  }
-
-  .seen .bands i {
-    animation: grow-in 1100ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-    animation-delay: calc(var(--n) * 70ms);
-    transform-origin: bottom;
-  }
-
-  @keyframes grow-in {
-    from {
-      scale: 1 0;
-    }
-  }
-
-  .banner-top,
-  .banner-foot {
-    display: flex;
-    justify-content: space-between;
-    align-items: end;
-    gap: 1rem;
-    font-size: 0.6875rem;
-    font-weight: 700;
-    line-height: 1.35;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
-  }
-
-  /* The right edge sits on the paper band, so it takes the paper's ink. */
-  .banner-top > :last-child,
-  .banner-foot > :last-child {
-    color: var(--on-paper);
-    text-align: right;
-  }
-
-  /* The headline spans the whole banner so its text-clipped fill lines up with the bands:
-     each letter takes the ink of the band it sits on. */
-  .banner-title {
-    position: absolute;
-    inset: 0;
-    display: grid;
-    place-content: center;
-    padding: 0 clamp(1.25rem, 7cqi, 7rem);
-    /* Generous to start with; the script shrinks it when the longest word would not fit. */
-    font-size: min(8.5rem, 13cqi);
-    line-height: 0.88;
-    text-align: center;
-    text-transform: uppercase;
-    text-wrap: balance;
-    overflow-wrap: normal;
-    color: transparent;
-    background: var(--title-fill);
-    -webkit-background-clip: text;
-    background-clip: text;
-  }
-
-  .seen .banner-title {
-    animation: reveal 1100ms cubic-bezier(0.6, 0, 0.2, 1) 300ms both;
-  }
-
-  @keyframes reveal {
-    from {
-      clip-path: inset(0 0 100% 0);
-      translate: 0 0.25em;
-    }
-    to {
-      clip-path: inset(0 0 -10% 0);
-    }
-  }
-
-  .banner-foot .lockup {
-    color: var(--bi4);
-    font-size: 1.25rem;
-    text-transform: none;
-    letter-spacing: 0;
-  }
-
-  /* Logo on color */
-  .on-color {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 12.5rem), 1fr));
-    gap: 0.5rem;
-  }
-
-  .tile {
-    position: relative;
-    display: grid;
-    place-items: center;
-    aspect-ratio: 4 / 3;
-    padding: 1rem;
+  .pick input::-webkit-color-swatch {
     border: 0;
-    border-radius: 2px;
-    font-size: clamp(1.125rem, 2vw, 1.5rem);
-    overflow: hidden;
-    box-shadow: inset 0 0 0 1px var(--hair);
+    border-radius: 7px;
   }
 
-  button.tile {
-    cursor: copy;
+  .pick input::-moz-color-swatch {
+    border: 0;
+    border-radius: 7px;
   }
 
-  .tile[hidden] {
-    display: none;
-  }
-
-  .tile .lockup {
-    transition: scale 400ms var(--ease);
-  }
-
-  .tile:hover .lockup {
-    scale: 1.08;
-  }
-
-  .tile-foot {
-    position: absolute;
-    inset: auto 0.75rem 0.6rem;
-    display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
-    font-size: 0.6875rem;
+  .role-name {
+    grid-area: name;
+    align-self: end;
+    font-size: var(--step--1);
     font-weight: 500;
     line-height: 1.2;
   }
 
-  .tile-name {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .tile-foot .hex {
-    opacity: 0.75;
-  }
-
-  .badge {
-    margin-left: auto;
-    padding: 0.1rem 0.4rem;
-    border-radius: 999px;
-    box-shadow: inset 0 0 0 1px currentColor;
+  .ratio {
+    grid-area: ratio;
+    align-self: start;
+    font-size: 0.75rem;
+    color: var(--muted);
     font-variant-numeric: tabular-nums;
+    min-height: 1.1em;
   }
 
-  .badge[data-pass='false'] {
-    opacity: 0.6;
-    text-decoration: line-through;
+  .ratio[data-fail] {
+    color: #c53d43;
   }
 
-  /* Symbol and logo sheets */
-  .spec {
-    display: grid;
-    grid-template-rows: auto 1fr auto;
-    justify-items: center;
-    gap: 1rem;
-    margin: 0;
+  .hex-in {
+    grid-area: hex;
+    text-transform: uppercase;
   }
 
-  .bracket {
-    position: relative;
-    width: 34%;
-    height: 0.45rem;
-    margin-top: 1.1rem;
-    border: 1px solid var(--soft);
-    border-bottom: 0;
-    font-size: 0.625rem;
-    color: var(--soft);
-  }
-
-  .bracket.wide {
-    width: 60%;
-  }
-
-  .bracket span {
-    position: absolute;
-    bottom: calc(100% + 0.35rem);
-    left: 50%;
-    translate: -50% 0;
-    white-space: nowrap;
-  }
-
-  .hero-sym {
-    align-self: center;
-    font-size: clamp(5rem, 10vw, 8.5rem);
-    background: var(--grad);
-  }
-
-  .spec .note {
-    justify-self: start;
-  }
-
-  .guides {
-    align-self: center;
-    position: relative;
-    max-width: 100%;
-    padding: 1em;
-    font-size: clamp(1.5rem, 2.8vw, 2.25rem);
-    border: 1px dashed var(--soft);
-  }
-
-  /* Clear-space markers on two sides of the box. */
-  .guides::before,
-  .guides::after {
-    content: 'x';
-    position: absolute;
-    font-size: 0.35em;
-    color: var(--soft);
-  }
-
-  .guides::before {
-    top: 0.45em;
-    left: 50%;
-    translate: -50% 0;
-  }
-
-  .guides::after {
-    top: 50%;
-    left: 0.6em;
-    translate: 0 -50%;
-  }
-
-  .guides .lockup {
-    outline: 1px solid var(--hair);
-  }
-
-  .quad {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-auto-rows: 1fr;
-    gap: 0.75rem;
-  }
-
-  .q {
-    position: relative;
+  .lock {
+    grid-area: lock;
     display: grid;
     place-items: center;
-    min-height: 7rem;
-    container-type: size;
-    overflow: hidden;
-    box-shadow: inset 0 0 0 1px var(--hair);
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: none;
+    color: color-mix(in oklab, var(--muted) 55%, transparent);
+    cursor: pointer;
   }
 
-  .q > .sym {
-    font-size: 40cqmin;
-    transition: scale 500ms var(--ease);
+  .lock svg {
+    width: 0.95rem;
+    height: 0.95rem;
   }
 
-  .q:hover > .sym {
-    scale: 1.1;
+  .lock .shackle {
+    transition: transform 160ms ease;
   }
 
-  .q.corner {
-    place-items: end start;
-    padding: 0.85rem;
+  .lock[aria-pressed='false'] .shackle {
+    transform: translate(2.5px, -1px);
   }
 
-  .q.corner .lockup {
-    font-size: clamp(0.625rem, 9cqi, 1rem);
+  .lock:hover {
+    color: var(--muted);
   }
 
-  .sizes {
-    gap: 0.6rem;
-    align-content: center;
+  .lock[aria-pressed='true'] {
+    color: var(--ink);
   }
 
-  /* The symbol at 48, 32 and 16 px, scaled down together when the tile is small. */
-  .sizes span {
-    display: flex;
-    align-items: end;
-    gap: 0.6em;
-    font-size: min(48px, 26cqi);
-  }
-
-  .sizes .sym:nth-child(2) {
-    font-size: 0.667em;
-  }
-
-  .sizes .sym:nth-child(3) {
-    font-size: 0.333em;
-  }
-
-  .sizes small {
-    font-size: 0.5625rem;
-    opacity: 0.7;
-  }
-
-  /* Colors */
-  .colors {
-    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.4fr);
-  }
-
-  .list-pane {
-    display: grid;
-    align-content: space-between;
-    gap: 1.25rem;
-  }
-
-  .swatch-list {
+  /* Fonts */
+  .font {
     display: grid;
     gap: 0.45rem;
     margin: 0;
     padding: 0;
-    list-style: none;
-  }
-
-  .swatch-list li[hidden] {
-    display: none;
-  }
-
-  .swatch-list button {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    padding: 0;
     border: 0;
-    background: none;
-    color: inherit;
-    text-align: left;
-    cursor: copy;
-  }
-
-  .swatch-list i {
-    flex: none;
-    width: 1.5rem;
-    height: 1.5rem;
-    border-radius: 2px;
-    box-shadow: inset 0 0 0 1px var(--hair);
-    transition: scale 200ms var(--ease);
-  }
-
-  .swatch-list button:hover i {
-    scale: 1.15;
-  }
-
-  .swatch-list span {
-    display: grid;
-    line-height: 1.2;
     min-width: 0;
   }
 
-  .swatch-list b {
-    font-size: 0.6875rem;
-    font-weight: 700;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .swatch-list .hex {
-    font-size: 0.5625rem;
-    color: var(--soft);
-  }
-
-  .tints {
-    display: flex;
-    gap: 0;
-  }
-
-  .tint-col {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 0;
-    min-width: 0;
+  legend {
     padding: 0;
-    border: 0;
-    background: none;
-    cursor: copy;
-    transition: flex-grow 400ms var(--ease);
-  }
-
-  .tint-col:hover {
-    flex-grow: 2;
-  }
-
-  .tint-col[hidden] {
-    display: none;
-  }
-
-  .tint-col i {
-    flex: 1;
-    min-height: 1rem;
-  }
-
-  .tint-col .base {
-    flex: 1.4;
-    display: grid;
-    place-items: center;
-    background: var(--k);
-    color: var(--on);
-    font-style: normal;
-    font-size: 0.5rem;
-    font-weight: 500;
-    overflow: hidden;
-  }
-
-  /* Type */
-  .type-left {
-    container-type: inline-size;
-    display: grid;
-    align-content: space-between;
-    gap: 1.5rem;
-  }
-
-  /* Sized to the pane, so wide faces like Unbounded still fit. */
-  .face {
-    font-size: min(2.5rem, 11cqi);
-    overflow-wrap: anywhere;
-    font-weight: 800;
-    letter-spacing: -0.035em;
-    line-height: 1;
-  }
-
-  .weights {
-    margin-top: 0.5rem;
-    font-size: 0.6875rem;
-    color: var(--soft);
-  }
-
-  .family {
-    margin-top: 0.35rem;
-    font-size: 0.6875rem;
-    font-weight: 700;
-    color: var(--primary);
-  }
-
-  .spacing {
-    font-size: 0.75rem;
-  }
-
-  .type-right {
-    container-type: inline-size;
-    display: grid;
-    align-content: center;
-    gap: 1.5rem;
-  }
-
-  .aa {
-    font-size: min(7.5rem, 19cqi);
-    font-weight: 800;
-    letter-spacing: -0.05em;
-    line-height: 0.9;
-    background: linear-gradient(90deg in oklab, var(--light), var(--primary), var(--accent));
-    background-clip: text;
-    -webkit-background-clip: text;
-    color: transparent;
-  }
-
-  .alpha {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem;
-    font-size: min(0.625rem, 2.6cqi);
-    line-height: 1.8;
-    overflow-wrap: anywhere;
-  }
-
-  /* Posters */
-  .visuals {
-    grid-template-columns: minmax(0, 0.7fr) minmax(0, 2.3fr);
-  }
-
-  .visuals > .pane:first-child {
-    display: grid;
-    align-content: end;
-  }
-
-  .posters {
-    display: grid;
-    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-rows: repeat(2, minmax(13rem, 1fr));
-    gap: 0.75rem;
-  }
-
-  .poster {
-    position: relative;
-    container-type: inline-size;
-    display: grid;
-    grid-template-rows: 1fr auto;
-    padding: clamp(0.9rem, 1.8vw, 1.35rem);
-    overflow: hidden;
-    box-shadow: inset 0 0 0 1px var(--hair);
-  }
-
-  .p1 {
-    grid-area: 1 / 1;
-  }
-
-  .p2 {
-    grid-area: 2 / 1;
-  }
-
-  .p3 {
-    grid-area: 1 / 2 / 3 / 3;
-  }
-
-  .p4 {
-    grid-area: 1 / 3 / 3 / 4;
-  }
-
-  .poster > p {
-    position: relative;
-  }
-
-  .p-head {
-    font-size: clamp(1.25rem, 2.2vw, 1.875rem);
-    font-weight: 700;
-    letter-spacing: -0.045em;
-    line-height: 1;
-    max-width: 14ch;
-  }
-
-  .p-head.big {
-    font-size: clamp(1.75rem, 3.4vw, 3rem);
-    font-weight: 800;
-    max-width: none;
-    overflow-wrap: anywhere;
-  }
-
-  .p-head.small {
-    align-self: end;
-    font-size: clamp(1.125rem, 1.8vw, 1.5rem);
-  }
-
-  .p-nav,
-  .p-foot {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.85rem;
-    font-size: 0.5625rem;
-    font-weight: 500;
-    opacity: 0.85;
-  }
-
-  .p-foot {
-    justify-content: space-between;
-    line-height: 1.4;
-  }
-
-  .p-foot span:last-child {
-    text-align: right;
-  }
-
-  .p2 .lockup {
-    font-size: 0.9rem;
-  }
-
-  .arches {
-    position: absolute;
-    inset: 24% 6% 0;
-    width: 88%;
-    height: 76%;
-    fill: none;
-    stroke: var(--light);
-    stroke-width: 0.6;
-    opacity: 0.7;
-  }
-
-  .arches path {
-    stroke-dasharray: 1;
-    stroke-dashoffset: 0;
-  }
-
-  .seen .arches path {
-    animation: draw 1800ms cubic-bezier(0.6, 0, 0.2, 1) both;
-    animation-delay: calc(400ms + var(--n) * 90ms);
-  }
-
-  @keyframes draw {
-    from {
-      stroke-dashoffset: 1;
-    }
-  }
-
-  .giant {
-    position: absolute;
-    right: -35cqi;
-    top: -8cqi;
-    font-size: 110cqi;
-    transition: rotate 1200ms var(--ease);
-  }
-
-  .p4:hover .giant {
-    rotate: -8deg;
-  }
-
-  /* Applications */
-  .apps {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr) minmax(0, 1.2fr);
-  }
-
-  .app-icon-stage {
-    display: grid;
-    place-items: center;
-    align-content: center;
-    gap: 1.25rem;
-  }
-
-  .stage-label {
-    font-size: 0.6875rem;
-    color: var(--soft);
-  }
-
-  .app {
-    position: relative;
-    display: grid;
-    justify-items: center;
-    gap: 0.35rem;
-  }
-
-  .icon {
-    display: grid;
-    place-items: center;
-    width: 8rem;
-    aspect-ratio: 1;
-    background: var(--primary);
-    color: var(--on-primary);
-    font-size: 3.75rem;
-    mask: var(--squircle) center / 100% 100% no-repeat;
-  }
-
-  .badge-dot {
-    position: absolute;
-    top: -0.6rem;
-    right: -0.6rem;
-    display: grid;
-    place-items: center;
-    min-width: 2rem;
-    height: 2rem;
-    border-radius: 999px;
-    background: var(--accent);
-    color: var(--on-accent);
-    box-shadow: 0 0 0 3px var(--bg);
-    font-size: 1rem;
-    font-weight: 700;
-  }
-
-  .seen .badge-dot {
-    animation: pop 600ms cubic-bezier(0.3, 1.6, 0.5, 1) 900ms both;
-  }
-
-  @keyframes pop {
-    from {
-      scale: 0;
-    }
-  }
-
-  .phone-stage {
-    display: grid;
-    place-items: center;
-  }
-
-  .phone {
-    width: min(100%, 13rem);
-    aspect-ratio: 9 / 18;
-    padding: 0.45rem;
-    border-radius: 2.1rem;
-    background: #0b0b0c;
-    box-shadow:
-      inset 0 0 0 1px rgb(255 255 255 / 0.12),
-      0 30px 50px -30px rgb(0 0 0 / 0.6);
-  }
-
-  .screen {
-    position: relative;
-    height: 100%;
-    padding: 2.75rem 0.9rem 1rem;
-    border-radius: 1.7rem;
-    /* Dark wallpaper, so the primary-colored icon always stands off it. */
-    background:
-      radial-gradient(120% 60% at 50% 0%, color-mix(in oklab, var(--primary) 45%, var(--deep)), transparent),
-      var(--deep);
-    overflow: hidden;
-  }
-
-  .clock {
-    position: absolute;
-    top: 0.85rem;
-    left: 0;
-    right: 0;
-    text-align: center;
-    color: var(--on-deep);
-    font-size: 0.8125rem;
-    font-weight: 700;
-  }
-
-  .grid-icons {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 1rem 0.55rem;
-  }
-
-  .ghost {
-    aspect-ratio: 1;
-    background: color-mix(in oklab, var(--paper) 30%, transparent);
-    mask: var(--squircle) center / 100% 100% no-repeat;
-  }
-
-  .app.small .icon {
-    width: 100%;
-    font-size: 1.05rem;
-  }
-
-  .app.small small {
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: 0.5rem;
-    font-weight: 500;
-    color: var(--on-deep);
-  }
-
-  .cards {
-    display: grid;
-    align-content: center;
-    gap: 0.75rem;
-  }
-
-  .card {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    aspect-ratio: 1.75;
-    padding: 1rem 1.15rem;
-    border-radius: 5px;
-    box-shadow:
-      0 1px 2px rgb(0 0 0 / 0.08),
-      0 14px 30px -14px rgb(0 0 0 / 0.3);
-    transition: rotate 700ms var(--ease);
-  }
-
-  .cards:hover .front {
-    rotate: -2deg;
-  }
-
-  .cards:hover .back {
-    rotate: 2deg;
-  }
-
-  .card .lockup {
-    font-size: 1.1rem;
-  }
-
-  .card p {
-    font-size: 0.6875rem;
-    line-height: 1.45;
-  }
-
-  .back {
-    position: relative;
-    overflow: hidden;
-  }
-
-  .pattern {
-    position: absolute;
-    inset: -12% -6%;
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    place-items: center;
-    font-size: clamp(1rem, 2.2vw, 1.6rem);
-    rotate: -12deg;
-  }
-
-  /* A wave runs diagonally across the marks. */
-  .seen .pattern .sym {
-    animation: wave 3.2s ease-in-out infinite;
-    animation-delay: calc(var(--n) * 140ms);
-  }
-
-  @keyframes wave {
-    0%,
-    60%,
-    100% {
-      scale: 1;
-      opacity: 0.9;
-    }
-    30% {
-      scale: 0.55;
-      opacity: 0.45;
-    }
-  }
-
-  /* ---------- Typefaces ---------- */
-  .board,
-  .mini {
-    font-family: var(--body);
-  }
-
-  .lock-text b,
-  .bhead h2,
-  .banner-title,
-  .p-head,
-  .face,
-  .aa,
-  .ui-greet,
-  .ui-sheet-title {
-    font-family: var(--display);
-    letter-spacing: var(--track);
-  }
-
-  .bhead h2,
-  .face,
-  .ui-greet,
-  .ui-sheet-title {
-    font-weight: var(--display-weight);
-  }
-
-  /* Wordmark, posters and the banner run two steps heavier than the slide titles. */
-  .lock-text b,
-  .banner-title,
-  .p-head,
-  .p-head.big,
-  .aa {
-    font-weight: min(900, calc(var(--display-weight) + 200));
-  }
-
-  /* Type panel */
-  .type-panel {
-    width: 100%;
-  }
-
-  .type-panel summary {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    width: max-content;
-    max-width: 100%;
-    padding: 0.45rem 0.9rem;
-    border: 1px solid var(--rule);
-    border-radius: 999px;
-    background: var(--raised);
-    font-size: var(--step--1);
-    font-weight: 700;
-    list-style: none;
-    cursor: pointer;
-    transition: border-color 160ms ease;
-  }
-
-  .type-panel summary:hover {
-    border-color: var(--ink);
-  }
-
-  .type-panel summary::-webkit-details-marker {
-    display: none;
-  }
-
-  .type-panel summary::after {
-    content: '';
-    width: 0.4rem;
-    height: 0.4rem;
-    border-right: 1.5px solid currentColor;
-    border-bottom: 1.5px solid currentColor;
-    rotate: 45deg;
-    translate: 0 -2px;
-    transition: rotate 200ms var(--ease);
-  }
-
-  .type-panel[open] summary::after {
-    rotate: 225deg;
-    translate: 0 2px;
-  }
-
-  .type-summary {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-weight: 500;
-    color: var(--muted);
-  }
-
-  .type-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
-    gap: 1.25rem 1.75rem;
-    margin-top: 0.75rem;
-    padding: 1.1rem 1.25rem 1.25rem;
-    border: 1px solid var(--rule);
-    border-radius: 14px;
-    background: var(--raised);
-  }
-
-  .type-panel[open] .type-grid {
-    animation: open 260ms var(--ease) both;
-  }
-
-  @keyframes open {
-    from {
-      opacity: 0;
-      translate: 0 -6px;
-    }
-  }
-
-  .tp-field,
-  .tp-font {
-    display: grid;
-    align-content: start;
-    gap: 0.5rem;
-    min-width: 0;
-    margin: 0;
-    padding: 0;
-    border: 0;
-  }
-
-  .tp-font legend {
-    float: left;
-    padding: 0;
+    margin-bottom: 0.45rem;
     font-size: var(--step--1);
     font-weight: 700;
   }
 
-  .tp-field > span,
-  .tp-range > span {
-    font-size: var(--step--1);
-    color: var(--muted);
-  }
-
-  .tp-field select,
-  .tp-input,
-  .tp-file span {
-    width: 100%;
-    height: 2.6rem;
-    padding: 0 0.85rem;
-    border: 1px solid var(--rule);
-    border-radius: 10px;
-    background: var(--ground);
-    font-weight: 500;
-    outline: none;
-  }
-
-  .tp-field select:focus-visible,
-  .tp-input:focus {
-    border-color: var(--ink);
-  }
-
-  .tp-field select {
-    cursor: pointer;
-  }
-
-  .tp-font .segment {
+  .seg {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 3px;
-    padding: 3px;
-    border: 1px solid var(--rule);
-    border-radius: 10px;
-  }
-
-  .tp-font .segment button {
-    padding: 0.4rem;
-    border: 0;
-    border-radius: 7px;
-    background: none;
-    color: var(--muted);
-  }
-
-  .tp-font .segment button[aria-pressed='true'] {
+    padding: 2px;
+    border-radius: 8px;
     background: var(--ground);
+    box-shadow: inset 0 0 0 1px var(--rule);
+  }
+
+  .seg button {
+    padding: 0.3rem 0.5rem;
+    border: 0;
+    border-radius: 6px;
+    background: none;
+    font-size: var(--step--1);
+    color: var(--muted);
+    cursor: pointer;
+  }
+
+  .seg button[aria-pressed='true'] {
+    background: var(--raised);
     color: var(--ink);
+    font-weight: 500;
     box-shadow: 0 0 0 1px var(--rule);
   }
 
-  .tp-input[hidden],
-  .tp-file[hidden] {
+  [data-pane='upload'] {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  [data-pane][hidden] {
     display: none;
   }
 
-  .tp-file {
+  .file {
     position: relative;
+    display: grid;
+    place-items: center;
+    padding: 0.55rem;
+    border: 1px dashed var(--muted);
+    border-radius: 6px;
+    font-size: var(--step--1);
+    font-weight: 500;
+    cursor: pointer;
   }
 
-  .tp-file input {
+  .file:hover {
+    border-color: var(--ink);
+  }
+
+  .file:focus-within {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  .file input {
     position: absolute;
     inset: 0;
     opacity: 0;
     cursor: pointer;
   }
 
-  .tp-file span {
-    display: flex;
-    align-items: center;
-    overflow: hidden;
-    border-style: dashed;
-    color: var(--muted);
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-
-  .tp-file:hover span,
-  .tp-file:has(input:focus-visible) span {
-    border-color: var(--ink);
-  }
-
-  .tp-font small {
+  .font-status {
+    min-height: 1.2em;
     font-size: 0.75rem;
     color: var(--muted);
   }
 
-  .tp-sliders {
-    display: grid;
-    align-content: start;
-    gap: 0.9rem;
+  .font-status[data-state='error'] {
+    color: #c53d43;
   }
 
-  .tp-range {
-    display: grid;
-    gap: 0.35rem;
+  .hint {
+    font-size: 0.75rem;
+    color: var(--muted);
   }
 
-  .tp-range > span {
-    display: flex;
-    justify-content: space-between;
-  }
-
-  .tp-range output {
-    color: var(--ink);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .tp-range input {
-    width: 100%;
-    margin: 0;
-    accent-color: var(--ink);
-  }
-
-  /* Corners: the slides take the full radius, what sits inside them a little less. */
-  .block {
-    border-radius: var(--radius);
-  }
-
-  .banner,
-  .panel,
-  .tile,
-  .q,
-  .poster,
-  .card,
-  .quad .q,
-  .app-icon-stage {
-    border-radius: calc(var(--radius) * 0.6);
-  }
-
-  .panel {
-    overflow: hidden;
-  }
-
-  /* ---------- Full-bleed color slide ---------- */
-  .block.fill {
-    --bg: var(--light);
-    --fg: var(--on-light);
-  }
-
-  .bhead[hidden] {
+  .hint[hidden] {
     display: none;
   }
 
-  .block.bare {
-    grid-template-rows: 1fr auto;
-  }
-
-  .inapp {
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: clamp(1.5rem, 5vw, 4.5rem);
-    min-height: clamp(30rem, 48vw, 40rem);
-    margin: calc(-1 * clamp(1rem, 2.6vw, 2rem));
-    margin-bottom: 0;
-    padding: 2.5rem 1rem 1rem;
-    overflow: hidden;
-    isolation: isolate;
-  }
-
-  .contours {
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    width: 100%;
-    height: 100%;
-    fill: none;
-    stroke: color-mix(in oklab, var(--fg) 22%, var(--bg));
-    stroke-width: 1;
-  }
-
-  .contours path {
-    stroke-dasharray: 1;
-  }
-
-  .seen .contours path {
-    animation: draw 2400ms cubic-bezier(0.6, 0, 0.2, 1) both;
-    animation-delay: calc(200ms + var(--n) * 70ms);
-  }
-
-  .ghost-mark {
-    position: absolute;
-    z-index: -1;
-    font-size: clamp(5rem, 11vw, 9rem);
-    opacity: 0.35;
-  }
-
-  .ghost-mark.a {
-    top: 7%;
-    left: 5%;
-    color: var(--primary);
-  }
-
-  .ghost-mark.b {
-    right: 6%;
-    bottom: 8%;
-    color: var(--accent);
-    rotate: 8deg;
-  }
-
-  .phone.ui {
-    width: clamp(12.5rem, 21vw, 16rem);
-    flex: none;
-    box-shadow:
-      inset 0 0 0 1px rgb(255 255 255 / 0.12),
-      0 40px 60px -30px rgb(0 0 0 / 0.55);
-  }
-
-  .seen .phone.ui {
-    animation: lift 1000ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  }
-
-  .seen .phone.ui + .phone.ui {
-    animation-delay: 150ms;
-    translate: 0 1.5rem;
-  }
-
-  @keyframes lift {
-    from {
-      opacity: 0;
-      transform: translateY(40px) rotate(-2deg);
-    }
-  }
-
-  .ui-screen {
-    display: flex;
-    flex-direction: column;
+  /* Saved */
+  .saved {
+    list-style: none;
+    margin: 0;
     padding: 0;
-    background: #ffffff;
-    color: #14161a;
-    font-size: 0.5625rem;
-    line-height: 1.35;
-  }
-
-  .ui-hero {
     display: grid;
-    align-content: space-between;
-    height: 38%;
-    padding: 2.4rem 0.85rem 0.85rem;
-    color: var(--on-deep);
-    font-size: 0.625rem;
-  }
-
-  .ui-greet {
-    font-size: 1.35rem;
-    line-height: 1;
-  }
-
-  .ui-body {
-    display: grid;
-    align-content: start;
-    gap: 0.5rem;
-    flex: 1;
-    padding: 0.7rem 0.6rem 0.6rem;
-  }
-
-  .bubble {
-    max-width: 85%;
-    padding: 0.45rem 0.55rem;
-    border-radius: 0.6rem;
-  }
-
-  .bubble.me {
-    justify-self: end;
-    background: var(--primary);
-    color: var(--on-primary);
-    border-bottom-right-radius: 0.15rem;
-  }
-
-  .bubble.them {
-    display: flex;
-    gap: 0.4rem;
-    background: #f1f2f4;
-    border-bottom-left-radius: 0.15rem;
-  }
-
-  .bubble.them .sym {
-    flex: none;
-    font-size: 0.8rem;
-    color: var(--primary);
-  }
-
-  .ui-chips {
-    display: flex;
-    gap: 0.25rem;
-  }
-
-  .ui-chips span {
-    padding: 0.2rem 0.45rem;
-    border: 1px solid #e2e4e8;
-    border-radius: 999px;
-    font-size: 0.5rem;
-  }
-
-  .ui-card {
-    display: grid;
-    gap: 0.3rem;
-    padding: 0.5rem;
-    border: 1px solid #e2e4e8;
-    border-radius: 0.6rem;
-  }
-
-  .ui-card p:first-child {
-    display: flex;
-    align-items: center;
     gap: 0.35rem;
   }
 
-  .ui-badge {
+  .saved:empty {
+    display: none;
+  }
+
+  .saved-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    background: var(--ground);
+  }
+
+  .saved-load {
+    display: grid;
+    grid-template-columns: 2.5rem 1fr;
+    grid-template-areas: 'strip name' 'strip fonts';
+    gap: 0 0.6rem;
+    padding: 0.4rem;
+    border: 0;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+    min-width: 0;
+  }
+
+  .saved-strip {
+    grid-area: strip;
+    height: 2.25rem;
+    border-radius: 5px;
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.08);
+  }
+
+  .saved-name {
+    grid-area: name;
+    font-size: var(--step--1);
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .saved-fonts {
+    grid-area: fonts;
+    font-size: 0.75rem;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .saved-del {
+    width: 2rem;
+    height: 2rem;
+    margin-right: 0.25rem;
+    border: 0;
+    border-radius: 6px;
+    background: none;
+    color: var(--muted);
+    font-size: 1.1rem;
+    cursor: pointer;
+  }
+
+  .saved-del:hover {
+    color: var(--ink);
+    background: var(--raised);
+  }
+
+  /* ---- Preview: a brand board. Everything below reads the brand variables ---- */
+
+  .symbols {
+    position: absolute;
+    width: 0;
+    height: 0;
+  }
+
+  .preview {
+    --bg: #e9ecf5;
+    --surface: #d3d8ec;
+    --text: #16163a;
+    --muted: #5d5f7a;
+    --accent: #5b3df5;
+    --accent2: #ff9f1c;
+    --on-accent: #fff;
+    --on-accent2: #16163a;
+    --head: ui-sans-serif, system-ui, sans-serif;
+    --body: ui-sans-serif, system-ui, sans-serif;
+    --hw: 700;
+    --track: -0.03em;
+    --radius: 14px;
+    --line: color-mix(in oklab, var(--text) 13%, transparent);
+    --r-md: calc(var(--radius) * 0.6);
+    --r-sm: calc(var(--radius) * 0.35);
+    --pad: clamp(1rem, 2.4vw, 1.75rem);
+    --gap: clamp(6px, 1vw, 12px);
+
+    min-width: 0;
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-auto-flow: row dense;
+    gap: var(--gap);
+    padding: var(--gap);
+    border-radius: calc(var(--radius) + var(--gap));
+    background: var(--text);
+    color: var(--text);
+    font-family: var(--body);
+  }
+
+  .preview,
+  .preview * {
+    transition-property: background-color, color, border-color, box-shadow, border-radius, fill, stroke;
+    transition-duration: 380ms;
+    transition-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .preview p {
+    margin: 0;
+  }
+
+  .s4 { grid-column: span 4; }
+  .s5 { grid-column: span 5; }
+  .s7 { grid-column: span 7; }
+  .s8 { grid-column: span 8; }
+  .s12 { grid-column: span 12; }
+  .tall { grid-row: span 2; }
+
+  .tile {
+    position: relative;
+    min-width: 0;
+    overflow: hidden;
+    border-radius: var(--radius);
+    background: var(--bg);
+  }
+
+  .mark {
+    flex: none;
+    overflow: visible;
+  }
+
+  .mark image,
+  .build image {
+    display: none;
+  }
+
+  .preview[data-logo='upload'] [data-mark-use] {
+    display: none;
+  }
+
+  .preview[data-logo='upload'] [data-mark-img] {
+    display: inline;
+  }
+
+  .tc-mark,
+  .tc-measure,
+  .lockup b,
+  .win-greet,
+  .kit-title,
+  .ph-title,
+  .ph-logo b,
+  .stat-num,
+  .pill,
+  .bubble,
+  .bf-b b,
+  .bf-c b,
+  .badge-name b,
+  .specimen-aa,
+  .specimen-glyphs,
+  .s-1,
+  .s-2,
+  .s-3,
+  .iu-h,
+  .poster b,
+  .menubar-brand b {
+    font-family: var(--head);
+    font-weight: var(--hw);
+    letter-spacing: var(--track);
+  }
+
+  /* Title card: the palette as proportional bands with one wordmark crossing all of them.
+     Each band clips its own copy of the wordmark, set in the color that reads on it. */
+  .tc {
+    position: relative;
+    height: clamp(20rem, 62vh, 40rem);
+    overflow: hidden;
+    border-radius: var(--radius);
+    background: var(--bg);
+  }
+
+  .tc-bands {
+    position: absolute;
+    inset: 0;
+    display: flex;
+  }
+
+  .band {
+    position: relative;
+    flex: var(--w) 1 0;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: var(--c);
+    color: var(--on);
+    cursor: pointer;
+    transform-origin: bottom;
+    animation: rise 900ms cubic-bezier(0.7, 0, 0.2, 1) both;
+    animation-delay: calc(var(--i) * 70ms);
+  }
+
+  .band[data-band='bg'] { --w: 30; }
+  .band[data-band='surface'] { --w: 16; }
+  .band[data-band='text'] { --w: 18; }
+  .band[data-band='muted'] { --w: 9; }
+  .band[data-band='accent'] { --w: 16; }
+  .band[data-band='accent2'] { --w: 11; }
+
+  .band:focus-visible {
+    outline: 2px solid var(--on);
+    outline-offset: -6px;
+  }
+
+  .band-meta {
+    position: absolute;
+    left: clamp(0.6rem, 1.2vw, 1rem);
+    right: 0.4rem;
+    bottom: clamp(0.6rem, 1.2vw, 1rem);
+    display: grid;
+    justify-items: start;
+    text-align: left;
+    font-size: 0.75rem;
+    line-height: 1.3;
+    font-family: var(--body);
+  }
+
+  .band-name {
+    opacity: 0.75;
+    white-space: nowrap;
+  }
+
+  .band-hex {
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .band-ratio {
+    opacity: 0.75;
+    min-height: 1.3em;
+    white-space: nowrap;
+  }
+
+  .band:hover .band-name {
+    opacity: 1;
+  }
+
+  .tc-mark {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    padding-left: 3%;
+    padding-bottom: 6%;
+    font-size: var(--mark, 12vw);
+    line-height: 0.8;
+    white-space: nowrap;
+    pointer-events: none;
+    clip-path: inset(0 calc(100% - var(--x1)) 0 var(--x0));
+    animation: mark-in 900ms cubic-bezier(0.2, 0.7, 0.2, 1) 520ms both;
+  }
+
+  .tc-measure {
+    position: absolute;
+    visibility: hidden;
+    font-size: 100px;
+    white-space: nowrap;
+  }
+
+  @keyframes rise {
+    from {
+      transform: scaleY(0);
+    }
+  }
+
+  @keyframes mark-in {
+    from {
+      opacity: 0;
+      transform: translateY(12%);
+    }
+  }
+
+  /* A new palette sweeps across the bands left to right. */
+  .preview.wiping .band,
+  .preview.wiping .tc-mark {
+    transition-duration: 650ms;
+    transition-delay: calc(var(--i) * 80ms);
+  }
+
+  /* Logo lockup and its construction */
+  .lockup {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(0.75rem, 2vw, 1.5rem);
+    min-height: clamp(14rem, 26vw, 20rem);
+    padding: var(--pad);
+  }
+
+  .lockup .mark {
+    width: clamp(3rem, 7vw, 5.5rem);
+    height: clamp(3rem, 7vw, 5.5rem);
+  }
+
+  .lockup b {
+    font-size: clamp(2.75rem, 7vw, 6rem);
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .build {
     display: grid;
     place-items: center;
-    width: 1.1rem;
-    height: 1.1rem;
-    border-radius: 0.3rem;
+    padding: var(--pad);
+    background: var(--surface);
+  }
+
+  .build > svg {
+    width: min(100%, 17rem);
+    height: auto;
+    overflow: visible;
+  }
+
+  .guides {
+    fill: none;
+    stroke: var(--text);
+    stroke-width: 0.4;
+    stroke-dasharray: 1.6 1.6;
+    opacity: 0.55;
+  }
+
+  /* OS scene */
+  .scene {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    justify-items: center;
+    gap: 1.25rem;
+    min-height: 30rem;
+    padding-bottom: 1rem;
+    background: var(--surface);
+  }
+
+  .wall-sun,
+  .wall-ring,
+  .wall-slab {
+    position: absolute;
+    border-radius: 50%;
+  }
+
+  .wall-sun {
+    width: 70%;
+    aspect-ratio: 1;
+    right: -18%;
+    bottom: -38%;
+    background: var(--accent);
+  }
+
+  .wall-ring {
+    width: 34%;
+    aspect-ratio: 1;
+    left: -8%;
+    top: 18%;
+    border: clamp(1.25rem, 3vw, 2.5rem) solid var(--accent2);
+  }
+
+  .wall-slab {
+    width: 46%;
+    height: 22%;
+    left: 6%;
+    bottom: -6%;
+    border-radius: 999px;
+    background: var(--text);
+  }
+
+  .menubar {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+    padding: 0.4rem 0.9rem;
+    background: color-mix(in oklab, var(--bg) 78%, transparent);
+    backdrop-filter: blur(12px);
+    font-size: 0.75rem;
+  }
+
+  .menubar-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .menubar-brand .mark {
+    width: 0.95rem;
+    height: 0.95rem;
+  }
+
+  .menubar-items {
+    display: flex;
+    gap: 0.9rem;
+    color: var(--muted);
+  }
+
+  .menubar-clock {
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .win {
+    position: relative;
+    align-self: center;
+    width: min(88%, 34rem);
+    overflow: hidden;
+    border-radius: var(--r-md);
+    background: var(--bg);
+    box-shadow:
+      0 0 0 1px var(--line),
+      0 30px 60px -20px color-mix(in oklab, var(--text) 45%, transparent);
+  }
+
+  .win-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.55rem 0.75rem;
+    border-bottom: 1px solid var(--line);
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .win-bar i {
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    background: var(--line);
+  }
+
+  .win-bar i:first-child {
+    background: var(--accent);
+  }
+
+  .win-bar span {
+    margin-inline: auto;
+    padding-right: 1.5rem;
+  }
+
+  .win-body {
+    display: grid;
+    grid-template-columns: 8rem minmax(0, 1fr);
+  }
+
+  .win-side {
+    list-style: none;
+    margin: 0;
+    padding: 0.5rem;
+    display: grid;
+    align-content: start;
+    gap: 0.1rem;
+    border-right: 1px solid var(--line);
+    font-size: 0.8125rem;
+    color: var(--muted);
+  }
+
+  .win-side li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.5rem;
+    border-radius: var(--r-sm);
+  }
+
+  .win-side i {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 3px;
+    background: var(--line);
+  }
+
+  .win-side .on {
     background: var(--accent);
     color: var(--on-accent);
-    font-size: 0.6rem;
+    font-weight: 600;
   }
 
-  .ui-card small {
-    color: #6b6f78;
-    font-size: 0.5rem;
+  .win-side .on i {
+    background: var(--on-accent);
+    opacity: 0.6;
   }
 
-  .ui-actions {
+  .win-main {
+    display: grid;
+    gap: 0.7rem;
+    padding: 0.85rem;
+  }
+
+  .win-greet {
+    font-size: 1.2rem;
+    line-height: 1.1;
+  }
+
+  .win-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.45rem;
+  }
+
+  .win-stat {
+    display: grid;
+    gap: 0.15rem;
+    padding: 0.6rem;
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .win-stat b {
+    font-family: var(--head);
+    font-size: 1.15rem;
+    letter-spacing: var(--track);
+    color: var(--text);
+  }
+
+  .win-stat.two {
+    background: var(--accent2);
+    color: var(--on-accent2);
+  }
+
+  .win-stat.two b {
+    color: inherit;
+  }
+
+  .meter {
+    display: block;
+    height: 0.35rem;
+    margin-top: 0.2rem;
+    border-radius: 99px;
+    background: var(--line);
+    overflow: hidden;
+  }
+
+  .meter i {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--accent);
+  }
+
+  .win-chart {
+    display: flex;
+    align-items: end;
+    gap: 0.3rem;
+    height: 4rem;
+  }
+
+  .win-chart i {
+    flex: 1;
+    border-radius: 3px 3px 1px 1px;
+    background: var(--accent);
+  }
+
+  .win-chart .b1 {
+    background: var(--accent2);
+  }
+
+  .win-chart .b2 {
+    background: var(--surface);
+  }
+
+  .dock {
+    position: relative;
+    display: flex;
+    gap: 0.4rem;
+    padding: 0.4rem;
+    border-radius: calc(var(--r-md) + 0.4rem);
+    background: color-mix(in oklab, var(--bg) 70%, transparent);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 0 0 1px var(--line);
+  }
+
+  .dock i {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--r-md);
+    background: var(--accent);
+  }
+
+  .dock i:nth-child(2) { background: var(--accent2); }
+  .dock i:nth-child(3) { background: var(--text); }
+  .dock i:nth-child(4) { background: var(--surface); }
+  .dock i:nth-child(5) { background: var(--muted); }
+  .dock i:nth-child(6) { background: linear-gradient(135deg in oklab, var(--accent), var(--accent2)); }
+
+  /* Interface column */
+  .kit {
+    display: grid;
+    align-content: start;
+    font-size: 0.875rem;
+  }
+
+  .kit-copy,
+  .kit-block {
+    display: grid;
+    gap: 0.85rem;
+    padding: var(--pad);
+  }
+
+  .kit-block {
+    border-top: 1px solid var(--line);
+  }
+
+  .kit-title {
+    font-size: clamp(1.75rem, 3vw, 2.6rem);
+    line-height: 1;
+    text-wrap: balance;
+    outline: none;
+    border-radius: 4px;
+  }
+
+  .kit-title:focus-visible {
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+
+  .kit-lede {
+    max-width: 38ch;
+    color: var(--muted);
+    font-size: 1rem;
+  }
+
+  .kit-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .kit-row.between {
+    justify-content: space-between;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    padding: 0.7rem 1.15rem;
+    border-radius: var(--r-md);
+    background: var(--accent);
+    color: var(--on-accent);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
+  .btn.small {
+    padding: 0.5rem 0.85rem;
+    border-radius: var(--r-sm);
+    font-size: 0.8125rem;
+  }
+
+  .btn.alt {
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  .field-mock {
+    display: grid;
+    gap: 0.1rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--r-sm);
+    box-shadow: inset 0 0 0 1.5px var(--accent);
+  }
+
+  .field-mock span {
+    font-size: 0.6875rem;
+    color: var(--muted);
+  }
+
+  .field-mock b {
+    font-weight: 500;
+  }
+
+  .toggle {
+    display: inline-flex;
+    justify-content: end;
+    width: 2.4rem;
+    height: 1.4rem;
+    padding: 0.15rem;
+    border-radius: 99px;
+    background: var(--accent);
+  }
+
+  .toggle i {
+    width: 1.1rem;
+    height: 1.1rem;
+    border-radius: 50%;
+    background: var(--on-accent);
+  }
+
+  .toggle.off {
+    justify-content: start;
+    background: var(--surface);
+  }
+
+  .toggle.off i {
+    background: var(--bg);
+    box-shadow: 0 1px 2px color-mix(in oklab, var(--text) 25%, transparent);
+  }
+
+  .seg-mock {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    padding: 0.2rem;
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    font-size: 0.8125rem;
+    text-align: center;
+  }
+
+  .seg-mock span {
+    padding: 0.3rem;
+    border-radius: calc(var(--r-sm) * 0.7);
+    color: var(--muted);
+  }
+
+  .seg-mock .on {
+    background: var(--bg);
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  /* Phone */
+  .phone-tile {
+    display: grid;
+    place-items: center;
+    padding: var(--pad) 0;
+    background: var(--accent);
+  }
+
+  .phone {
+    width: min(78%, 15rem);
+    aspect-ratio: 9 / 18.5;
+    padding: 0.45rem;
+    border-radius: 2.1rem;
+    background: var(--text);
+    rotate: -7deg;
+    box-shadow: 0 30px 50px -20px color-mix(in oklab, var(--text) 60%, transparent);
+  }
+
+  .screen {
+    height: 100%;
+    display: grid;
+    grid-template-rows: auto auto 1fr auto auto auto auto;
+    gap: 0.6rem;
+    padding: 1.6rem 0.85rem 0.75rem;
+    overflow: hidden;
+    border-radius: 1.7rem;
+    background: var(--bg);
+    font-size: 0.6875rem;
+  }
+
+  .ph-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .ph-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .ph-logo .mark {
+    width: 0.9rem;
+    height: 0.9rem;
+  }
+
+  .ph-logo b {
+    font-size: 0.8125rem;
+  }
+
+  .ph-menu {
+    width: 1.1rem;
+    height: 1.1rem;
+    border-radius: 50%;
+    background: var(--text);
+  }
+
+  .ph-title {
+    font-size: 1.45rem;
+    line-height: 0.95;
+  }
+
+  .ph-art {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--r-md);
+    background: var(--surface);
+  }
+
+  .ph-art i {
+    position: absolute;
+    border-radius: 50%;
+  }
+
+  .ph-art i:nth-child(1) {
+    width: 80%;
+    aspect-ratio: 1;
+    right: -25%;
+    top: -30%;
+    background: var(--accent);
+  }
+
+  .ph-art i:nth-child(2) {
+    width: 45%;
+    aspect-ratio: 1;
+    left: 8%;
+    bottom: -20%;
+    background: var(--accent2);
+  }
+
+  .ph-art i:nth-child(3) {
+    width: 30%;
+    height: 14%;
+    left: 10%;
+    top: 14%;
+    border-radius: 99px;
+    background: var(--text);
+  }
+
+  .ph-chips {
     display: flex;
     gap: 0.3rem;
   }
 
-  .ui-btn {
-    flex: 1;
-    padding: 0.3rem;
-    border-radius: 999px;
-    border: 1px solid #e2e4e8;
-    text-align: center;
-    font-weight: 700;
+  .ph-chips span {
+    padding: 0.2rem 0.55rem;
+    border-radius: 99px;
+    box-shadow: inset 0 0 0 1px var(--line);
   }
 
-  .ui-btn.solid {
-    border-color: var(--primary);
-    background: var(--primary);
-    color: var(--on-primary);
+  .ph-chips .on {
+    background: var(--text);
+    color: var(--bg);
+    box-shadow: none;
   }
 
-  .ui-input {
+  .ph-row {
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    margin-top: auto;
-    padding: 0.4rem 0.4rem 0.4rem 0.6rem;
-    border: 1px solid #e2e4e8;
-    border-radius: 999px;
-    color: #8a8e96;
+    padding: 0.45rem 0.55rem;
+    border-radius: var(--r-sm);
+    background: var(--surface);
   }
 
-  .ui-input i {
+  .ph-tabs {
+    display: flex;
+    justify-content: space-around;
+    padding-top: 0.35rem;
+  }
+
+  .ph-tabs i {
     width: 0.9rem;
     height: 0.9rem;
-    border-radius: 50%;
-    background: var(--primary);
+    border-radius: 4px;
+    background: var(--line);
   }
 
-  .ui-screen.map {
-    background: color-mix(in oklab, var(--primary) 30%, #ffffff);
+  .ph-tabs .on {
+    background: var(--accent);
   }
 
-  .ui-map {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 62%;
-    fill: none;
-    stroke: color-mix(in oklab, var(--primary) 55%, #ffffff);
-    stroke-width: 0.8;
-  }
-
-  .ui-map .route {
-    stroke: var(--accent);
-    stroke-width: 1.6;
-    stroke-dasharray: 2 3;
-    stroke-linecap: round;
-  }
-
-  .seen .ui-map .route {
-    animation: march 1.2s linear infinite;
-  }
-
-  @keyframes march {
-    to {
-      stroke-dashoffset: -10;
-    }
-  }
-
-  .ui-map .pin {
-    fill: var(--primary);
-    stroke: #ffffff;
-    stroke-width: 1.5;
-  }
-
-  .ui-pin {
-    position: absolute;
-    top: 18%;
-    right: 18%;
+  /* Stat bubble */
+  .stat {
     display: grid;
     place-items: center;
-    width: 1.5rem;
-    height: 1.5rem;
-    border-radius: 0.4rem 0.4rem 0.4rem 0;
-    background: var(--primary);
-    color: var(--on-primary);
-    font-size: 0.85rem;
-    rotate: -45deg;
+    min-height: 15rem;
+    padding: var(--pad);
+    background: var(--accent2);
   }
 
-  .ui-pin .sym {
-    rotate: 45deg;
-  }
-
-  .ui-search {
+  .stat-disc {
     position: relative;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    width: min(100%, 13rem);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--bg);
+    text-align: center;
+  }
+
+  .stat-badge {
+    position: absolute;
+    top: 4%;
+    left: 4%;
+    display: grid;
+    place-items: center;
+    width: 22%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--text);
+    color: var(--accent2);
+  }
+
+  .stat-badge svg {
+    width: 50%;
+    fill: currentColor;
+  }
+
+  .stat-num {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin: 2.3rem 0.6rem 0;
-    padding: 0.4rem 0.6rem;
-    border-radius: 999px;
-    background: #ffffff;
-    box-shadow: 0 4px 10px -6px rgb(0 0 0 / 0.3);
+    gap: 0.1em;
+    font-size: clamp(2.5rem, 4.5vw, 3.5rem);
+    line-height: 1;
   }
 
-  .ui-search .sym {
-    color: var(--primary);
-    font-size: 0.7rem;
+  .stat-num svg {
+    width: 0.7em;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.5;
   }
 
-  .ui-sheet {
-    position: relative;
-    margin-top: auto;
-    height: 46%;
-    padding: 0.8rem 0.75rem;
-    border-radius: 0.9rem 0.9rem 0 0;
-    background: #ffffff;
-    box-shadow: 0 -8px 20px -14px rgb(0 0 0 / 0.35);
-  }
-
-  .ui-sheet::before {
-    content: '';
-    display: block;
-    width: 1.6rem;
-    height: 3px;
-    margin: -0.35rem auto 0.55rem;
-    border-radius: 3px;
-    background: #dcdee2;
-  }
-
-  .ui-sheet-title {
+  .stat-label {
+    max-width: 11ch;
+    margin-top: 0.3rem !important;
     font-size: 0.875rem;
-    margin-bottom: 0.4rem;
+    line-height: 1.25;
   }
 
-  .ui-sheet ul {
+  /* Icon set */
+  .icon-set {
     display: grid;
-    margin: 0;
-    padding: 0;
-    list-style: none;
+    grid-template-columns: repeat(2, auto);
+    place-content: center;
+    gap: 0.6rem;
+    min-height: 15rem;
+    padding: var(--pad);
   }
 
-  .ui-sheet li {
+  .ic {
+    display: grid;
+    place-items: center;
+    width: clamp(3.5rem, 6vw, 4.75rem);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--text);
+    color: var(--bg);
+  }
+
+  .ic:nth-child(2) {
+    color: var(--accent2);
+  }
+
+  .ic:nth-child(4) {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+
+  .ic svg {
+    width: 44%;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* Value pills */
+  .pills {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: center;
+    gap: 0.45rem;
+    padding: var(--pad);
+    background: var(--surface);
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    height: 2.6rem;
+    padding: 0 1rem;
+    border-radius: 99px;
+    background: var(--bg);
+    font-size: 1.15rem;
+    line-height: 1;
+  }
+
+  .pill.dot {
+    width: 2.6rem;
+    padding: 0;
+    background: radial-gradient(circle, var(--accent2) 0 22%, transparent 23%) 0 0 / 0.65rem 0.65rem, var(--accent);
+  }
+
+  .pill.dot.alt {
+    background: repeating-linear-gradient(45deg, var(--text) 0 3px, var(--bg) 3px 6px);
+  }
+
+  .pill.grad {
+    background: linear-gradient(90deg in oklab, var(--text), var(--accent));
+    color: var(--bg);
+  }
+
+  .pill.outline {
+    background: none;
+    box-shadow: inset 0 0 0 1.5px var(--text);
+  }
+
+  /* Chat */
+  .chat {
+    display: grid;
+    align-content: center;
+    gap: 1.1rem;
+    padding: var(--pad);
+    background: var(--surface);
+  }
+
+  .bubble {
+    position: relative;
+    justify-self: start;
+    max-width: 85%;
+    padding: 0.75rem 1.1rem;
+    border-radius: 1.4rem;
+    background: var(--accent2);
+    color: var(--on-accent2);
+    font-size: clamp(1.1rem, 1.8vw, 1.4rem);
+    line-height: 1.1;
+    box-shadow: 0 0 0 2px var(--text);
+  }
+
+  .bubble::after {
+    content: '';
+    position: absolute;
+    left: 1.25rem;
+    bottom: -0.55rem;
+    width: 1rem;
+    height: 1rem;
+    background: inherit;
+    clip-path: polygon(0 0, 100% 0, 0 100%);
+    box-shadow: inherit;
+  }
+
+  .bubble.two {
+    justify-self: end;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .bubble.two::after {
+    left: auto;
+    right: 1.25rem;
+    clip-path: polygon(0 0, 100% 0, 100% 100%);
+  }
+
+  /* Billboard */
+  .street {
+    display: grid;
+    place-items: center;
+    min-height: 22rem;
+    padding: var(--pad) var(--pad) 0;
+    background:
+      linear-gradient(transparent 78%, color-mix(in oklab, var(--text) 18%, var(--surface)) 78%),
+      linear-gradient(var(--bg), var(--surface));
+  }
+
+  .board {
+    width: min(100%, 44rem);
+    display: grid;
+    justify-items: center;
+  }
+
+  .board-lights {
+    display: flex;
+    justify-content: space-around;
+    width: 90%;
+  }
+
+  .board-lights i {
+    width: 1.6rem;
+    height: 0.5rem;
+    border-radius: 2px 2px 0 0;
+    background: var(--muted);
+  }
+
+  .board-face {
+    width: 100%;
+    aspect-ratio: 3.2;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.5fr;
+    overflow: hidden;
+    border: 0.45rem solid var(--text);
+    border-radius: 4px;
+    background: var(--bg);
+  }
+
+  .bf-a {
+    display: grid;
+    place-items: center;
+    background: var(--accent);
+    --m1: var(--on-accent);
+  }
+
+  .bf-a .mark {
+    width: 55%;
+    height: auto;
+    aspect-ratio: 1;
+  }
+
+  .bf-b {
+    display: grid;
+    align-content: start;
+    justify-items: start;
+    gap: 0.25rem;
+    padding: 0.7rem;
+    font-size: clamp(0.5rem, 0.9vw, 0.6875rem);
+  }
+
+  .bf-b span {
+    padding: 0.1rem 0.45rem;
+    border-radius: 99px;
+    box-shadow: inset 0 0 0 1px var(--text);
+  }
+
+  .bf-b b {
+    margin-top: auto;
+    align-self: end;
+    font-size: clamp(0.9rem, 1.6vw, 1.25rem);
+  }
+
+  .bf-c {
+    display: grid;
+    align-content: space-between;
+    padding: 0.7rem;
+    background: var(--accent2);
+    color: var(--on-accent2);
+  }
+
+  .bf-c b {
+    font-size: clamp(1.1rem, 2.6vw, 2.1rem);
+    line-height: 0.95;
+  }
+
+  .bf-c span {
+    font-size: clamp(0.5rem, 0.9vw, 0.6875rem);
+  }
+
+  .board-legs {
+    display: flex;
+    justify-content: space-between;
+    width: 40%;
+  }
+
+  .board-legs i {
+    width: 0.6rem;
+    height: clamp(3rem, 6vw, 4.5rem);
+    background: var(--text);
+  }
+
+  /* ID badge */
+  .badge-tile {
+    display: grid;
+    justify-items: center;
+    align-content: start;
+    min-height: 22rem;
+    background: var(--accent);
+  }
+
+  .strap {
+    width: 1.1rem;
+    height: 3.5rem;
+    background: var(--text);
+  }
+
+  .badge {
+    width: min(72%, 14rem);
+    margin-top: -0.3rem;
+    overflow: hidden;
+    border-radius: var(--r-md);
+    background: var(--bg);
+    rotate: 6deg;
+    transform-origin: top center;
+    box-shadow: 0 24px 40px -18px color-mix(in oklab, var(--text) 60%, transparent);
+  }
+
+  .badge-top {
+    position: relative;
+    display: grid;
+    align-items: end;
+    aspect-ratio: 1.15;
+    padding: 1rem;
+    background: var(--accent2);
+    --m1: var(--text);
+    --m2: var(--bg);
+  }
+
+  .badge-top .mark {
+    width: 42%;
+    height: auto;
+    aspect-ratio: 1;
+  }
+
+  .qr {
+    position: absolute;
+    top: 0.9rem;
+    right: 0.9rem;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    width: 2.4rem;
+    aspect-ratio: 1;
+  }
+
+  .qr i.on {
+    background: var(--text);
+  }
+
+  .badge-name {
+    display: grid;
+    padding: 0.8rem 1rem 1rem;
+    font-size: 0.6875rem;
+    color: var(--muted);
+  }
+
+  .badge-name b {
+    font-size: 1.2rem;
+    line-height: 1.1;
+    color: var(--text);
+  }
+
+  /* Type */
+  .specimen {
+    display: grid;
+    align-content: space-between;
+    gap: 1.5rem;
+    padding: var(--pad);
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+
+  .specimen-aa {
+    font-size: clamp(6rem, 13vw, 11rem);
+    line-height: 0.8;
+  }
+
+  .specimen-glyphs {
+    font-size: clamp(1.05rem, 1.7vw, 1.4rem);
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+  }
+
+  .specimen-name {
+    font-size: 0.8125rem;
+  }
+
+  .specimen-name span {
+    margin-left: 0.3rem;
+    opacity: 0.7;
+  }
+
+  .scale {
+    display: grid;
+    align-content: start;
+    gap: 1rem;
+    padding: var(--pad);
+  }
+
+  .scale p {
+    overflow-wrap: anywhere;
+  }
+
+  .s-1 {
+    font-size: clamp(2.75rem, 6vw, 5rem);
+    line-height: 0.9;
+  }
+
+  .s-2 {
+    font-size: clamp(1.5rem, 2.6vw, 2.1rem);
+    line-height: 1.05;
+  }
+
+  .s-3 {
+    font-size: 1.25rem;
+    line-height: 1.2;
+    color: var(--muted);
+  }
+
+  .s-body {
+    max-width: 56ch;
+    line-height: 1.6;
+  }
+
+  .scale .specimen-name {
+    margin-top: auto;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .scale .specimen-name span {
+    color: var(--muted);
+    opacity: 1;
+  }
+
+  /* In use: layout columns behind the content, with each style called out on the left */
+  .inuse {
+    display: grid;
+    gap: clamp(1rem, 2.5vw, 2rem);
+    padding: clamp(1.5rem, 4vw, 3rem) var(--pad);
+  }
+
+  .cols {
+    position: absolute;
+    inset: 0 var(--pad) 0 calc(var(--pad) + 9rem);
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 1rem;
+    pointer-events: none;
+  }
+
+  .cols i {
+    background: color-mix(in oklab, var(--accent2) 16%, transparent);
+  }
+
+  .iu-row {
+    position: relative;
+    display: grid;
+    grid-template-columns: 9rem minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .iu-row > :last-child {
+    justify-self: start;
+  }
+
+  .iu-note {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-    padding-block: 0.4rem;
-    border-top: 1px solid #eceef1;
+    gap: 0.5rem;
+    padding-right: 0.75rem;
+    font-size: 0.75rem;
+    color: var(--muted);
   }
 
-  .ui-sheet li b {
-    color: var(--primary);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .ui-sheet li span {
-    display: grid;
+  .iu-note::after {
+    content: '';
     flex: 1;
+    border-top: 1px dashed var(--muted);
+  }
+
+  .iu-h {
+    max-width: 18ch;
+    font-size: clamp(1.75rem, 3.6vw, 3rem);
+    line-height: 1;
+  }
+
+  .iu-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem 2rem;
+    max-width: 44rem;
+    font-size: 0.9375rem;
+  }
+
+  .iu-cols b {
+    display: block;
+    margin-bottom: 0.2rem;
+  }
+
+  /* Posters */
+  .poster {
+    container-type: inline-size;
+    aspect-ratio: 4 / 5;
+    display: grid;
+    align-content: space-between;
+    padding: clamp(0.9rem, 1.8vw, 1.4rem);
+  }
+
+  .poster-top {
+    position: relative;
+    font-size: max(0.75rem, 4.5cqi);
     font-weight: 600;
   }
 
-  .ui-sheet small {
-    color: #8a8e96;
-    font-weight: 400;
-    font-size: 0.5rem;
+  .poster b {
+    position: relative;
+    font-size: 21cqi;
+    line-height: 0.88;
+    overflow-wrap: anywhere;
   }
 
-  .ui-sheet li .sym {
-    color: var(--accent);
-    font-size: 0.7rem;
+  .poster.one {
+    background: var(--accent2);
+    color: var(--on-accent2);
   }
 
-  .guides small {
+  .poster.one b {
+    font-size: 125cqi;
+    line-height: 0.72;
+    margin: 0 0 -9cqi -6cqi;
+  }
+
+  .poster.two {
+    background: var(--text);
+    color: var(--bg);
+  }
+
+  .poster.two b {
+    font-size: 15cqi;
+    max-width: 8ch;
+  }
+
+  .poster.two .dot {
     position: absolute;
-    top: calc(100% + 0.6rem);
-    left: 50%;
-    translate: -50% 0;
-    font-size: 0.3em;
-    color: var(--soft);
-    white-space: nowrap;
+    right: -14cqi;
+    top: 14cqi;
+    width: 64cqi;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--accent);
   }
 
-  /* ---------- Narrow screens ---------- */
-  @media (max-width: 1100px) {
-    .board {
-      grid-template-columns: minmax(0, 1fr);
+  .poster.two .pill-shape {
+    position: absolute;
+    left: clamp(0.9rem, 1.8vw, 1.4rem);
+    top: 48cqi;
+    width: 46cqi;
+    height: 14cqi;
+    border-radius: 99px;
+    background: var(--accent2);
+  }
+
+  .poster.three {
+    background: var(--surface);
+  }
+
+  .poster.three b {
+    font-size: 16cqi;
+  }
+
+  .icons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4cqi;
+    width: 70%;
+  }
+
+  .icons i {
+    aspect-ratio: 1;
+    border-radius: min(var(--r-md), 6cqi);
+    background: var(--accent);
+  }
+
+  .icons i:nth-child(3n + 2) { background: var(--accent2); }
+  .icons i:nth-child(4n) { background: var(--text); }
+  .icons i:nth-child(5) { background: var(--bg); }
+
+  @media (max-width: 1180px) {
+    .s4,
+    .s5,
+    .s7 {
+      grid-column: span 6;
     }
-    .apps {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+    .s8 {
+      grid-column: span 12;
     }
-    .apps .cards {
-      grid-column: 1 / -1;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      border-left: 0;
-      border-top: 1px solid var(--hair);
+    .scene,
+    .kit {
+      grid-column: span 12;
     }
   }
 
-  @media (max-width: 760px) {
-    .panel,
-    .colors,
-    .visuals,
-    .apps {
+  @media (max-width: 860px) {
+    .lab {
       grid-template-columns: minmax(0, 1fr);
     }
-    .pane + .pane {
-      border-left: 0;
-      border-top: 1px solid var(--hair);
-    }
-    .apps .cards {
-      grid-template-columns: minmax(0, 1fr);
-    }
-    .posters {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      grid-template-rows: repeat(3, minmax(12rem, auto));
-    }
-    .p1 {
-      grid-area: 1 / 1 / 2 / 3;
-    }
-    .p2 {
-      grid-area: 2 / 1 / 3 / 3;
-    }
-    .p3 {
-      grid-area: 3 / 1;
-    }
-    .p4 {
-      grid-area: 3 / 2;
-    }
-    .quad {
-      min-height: 18rem;
-    }
-    .tints {
-      min-height: 16rem;
-    }
-    .banner {
-      aspect-ratio: auto;
-      min-height: 26rem;
-    }
-    .banner-foot > p:first-child {
-      display: none;
-    }
-    .inapp {
-      gap: 0.75rem;
-      min-height: 26rem;
-    }
-    /* Scale each phone as a whole so its interface keeps its proportions. */
-    .phone.ui {
-      width: 13rem;
-      zoom: 0.68;
+    .panel {
+      position: static;
+      max-height: none;
     }
   }
 
   @media (max-width: 640px) {
-    .uploads {
-      width: 100%;
+    .preview {
+      grid-template-columns: minmax(0, 1fr);
     }
-    .drop {
-      flex: 1;
-      min-width: 0;
+    .s4,
+    .s5,
+    .s7,
+    .s8,
+    .s12 {
+      grid-column: auto;
     }
-    .drop label {
-      padding-right: 0.5rem;
+    .tall {
+      grid-row: auto;
     }
-    .drop-text small {
+    .band-name,
+    .band-ratio {
       display: none;
     }
-    .pick {
-      width: 100%;
-      justify-content: space-between;
+    .band-hex {
+      writing-mode: vertical-rl;
+      rotate: 180deg;
     }
-    .pname {
-      flex: 1;
-      max-width: none;
-      min-width: 0;
-    }
-    .bhead .meta {
+    .menubar-items {
       display: none;
     }
-    .on-color {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+    .win {
+      width: 92%;
     }
-    .tile {
-      font-size: 0.9rem;
+    .win-body {
+      grid-template-columns: minmax(0, 1fr);
     }
-    .tile-foot .tile-name:not(:only-child) {
+    .win-side {
       display: none;
     }
-    .tile-foot {
-      inset: auto 0.5rem 0.45rem;
-      font-size: 0.625rem;
+    .phone-tile {
+      min-height: 30rem;
+    }
+    .cols {
+      left: var(--pad);
+    }
+    .iu-row {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.4rem;
+    }
+    .iu-cols {
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 </style>

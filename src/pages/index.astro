@@ -55,8 +55,9 @@ const hasBrand = infos.some((i) => i.palette.data.origin === 'brand');
     <h1 class="visually-hidden">Cores</h1>
     <Logo class="mark" />
     <nav class="links">
-      <a href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/brand/`}>Brand studio</a>
       <a href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/today/`}>Color of the day</a>
+      <a href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/brand/`}>Brand lab</a>
+      <a href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/studio/`}>Brand studio</a>
     </nav>
   </header>
 
@@ -363,10 +364,10 @@ const hasBrand = infos.some((i) => i.palette.data.origin === 'brand');
   .links {
     display: flex;
     gap: 1.25rem;
-    font-weight: 500;
   }
 
   .links a {
+    font-weight: 500;
     text-underline-offset: 3px;
   }
 

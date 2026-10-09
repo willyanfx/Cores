@@ -4,7 +4,7 @@
 For each palette color, find the closest pixel color in a downsampled copy of the
 source image. Colors farther than THRESHOLD (Euclidean RGB) are reported.
 """
-import json, glob, sys
+import json, glob, os, sys
 from PIL import Image
 
 THRESHOLD = float(sys.argv[1]) if len(sys.argv) > 1 else 18
@@ -23,6 +23,9 @@ def rgb(h):
 bad = 0
 for f in sorted(glob.glob("data/extracted/*.json")):
     for p in json.load(open(f)):
+        if not os.path.exists(p["source"]):
+            print(f"skipped (source image not found): {p['title']}  {p['source']}")
+            continue
         px = pixels(p["source"])
         for c in p["colors"]:
             r, g, b = rgb(c["hex"])
