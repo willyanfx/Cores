@@ -84,12 +84,6 @@ const toHex = ([L, a, b]: Lab): string => {
   );
 };
 
-/** Mix two colors in OKLab, `w` parts of `a` to `1 - w` of `b`, as CSS `color-mix(in oklab, a w%, b)` does. */
-export function mixOklab(a: string, b: string, w: number): string {
-  const [p, q] = [toLab(a), toLab(b)];
-  return toHex([0, 1, 2].map((i) => p[i] * w + q[i] * (1 - w)) as Lab);
-}
-
 /**
  * Dress the mark in a palette. The ground is the palette's richest color that
  * still carries light type, and the bands walk from it to the palette's

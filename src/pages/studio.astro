@@ -370,7 +370,7 @@ const tileText = (k: number) => {
                   class="tile"
                   data-k={k}
                   style={`background:var(--c${k});color:var(--o${k})`}
-                  data-copy={color?.hex}
+                  data-copy={color?.hex ?? ''}
                   data-swatch={color?.hex}
                   hidden={!color}
                 >
@@ -461,7 +461,7 @@ const tileText = (k: number) => {
               {
                 slots.map(({ k, color }) => (
                   <li data-k={k} hidden={!color}>
-                    <button type="button" data-copy={color?.hex} data-swatch={color?.hex}>
+                    <button type="button" data-copy={color?.hex ?? ''} data-swatch={color?.hex}>
                       <i style={`background:var(--c${k})`} />
                       <span>
                         <b data-f="label">{color?.name ?? ''}</b>
@@ -485,7 +485,7 @@ const tileText = (k: number) => {
                   class="tint-col"
                   data-k={k}
                   style={`--k:var(--c${k});--on:var(--o${k})`}
-                  data-copy={color?.hex}
+                  data-copy={color?.hex ?? ''}
                   data-swatch={color?.hex}
                   hidden={!color}
                 >
@@ -688,7 +688,10 @@ const tileText = (k: number) => {
       try {
         if (v === null) localStorage.removeItem(`cores-studio-${k}`);
         else localStorage.setItem(`cores-studio-${k}`, v);
-      } catch {}
+        return true;
+      } catch {
+        return false;
+      }
     },
   };
 
@@ -726,9 +729,10 @@ const tileText = (k: number) => {
       const c = state.colors[k];
       el.hidden = !c;
       if (!c) return;
-      if (el.dataset.copy !== undefined) {
-        el.dataset.copy = c.hex;
-        el.dataset.swatch = c.hex;
+      for (const target of [el, ...el.querySelectorAll<HTMLElement>('[data-copy]')]) {
+        if (!target.hasAttribute('data-copy')) continue;
+        target.dataset.copy = c.hex;
+        target.dataset.swatch = c.hex;
       }
       const f = (n: string) => el.querySelector<HTMLElement>(`[data-f=${n}]`);
       if (f('name')) f('name')!.textContent = c.name ?? '';
@@ -778,14 +782,18 @@ const tileText = (k: number) => {
     setText('[data-domain]', `hello@${domain}`);
     setText('[data-domain-short]', domain);
   };
-  // Shrink the banner headline until its longest word fits, rather than breaking a word.
+  // Shrink the banner headline until its longest word fits across and the lines fit between the
+  // top and bottom captions, rather than breaking a word or running off the banner.
   const bannerTitle = studio.querySelector<HTMLElement>('.banner-title')!;
   const measure = document.createElement('canvas').getContext('2d')!;
+  const MIN_TITLE = 18;
   function fitTitle() {
-    bannerTitle.style.fontSize = '';
+    const style = bannerTitle.style;
+    style.fontSize = '';
+    style.overflowWrap = '';
     const cs = getComputedStyle(bannerTitle);
     const room = bannerTitle.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-    const size = parseFloat(cs.fontSize);
+    let size = parseFloat(cs.fontSize);
     measure.font = `${cs.fontWeight} ${size}px ${cs.fontFamily}`;
     const track = parseFloat(cs.letterSpacing) || 0;
     const widest = Math.max(
@@ -794,7 +802,18 @@ const tileText = (k: number) => {
         .split(/\s+/)
         .map((w) => measure.measureText(w).width + track * w.length),
     );
-    if (widest > room) bannerTitle.style.fontSize = `${Math.floor((size * room * 0.97) / widest)}px`;
+    if (widest > room) size = Math.max(MIN_TITLE, Math.floor((size * room * 0.97) / widest));
+    // A single word too long even at the smallest size may break after all.
+    if ((widest * size) / parseFloat(cs.fontSize) > room) style.overflowWrap = 'anywhere';
+    style.fontSize = `${size}px`;
+
+    const text = document.createRange();
+    text.selectNodeContents(bannerTitle);
+    const maxHeight = bannerTitle.clientHeight * 0.62;
+    while (size > MIN_TITLE && text.getBoundingClientRect().height > maxHeight) {
+      size = Math.max(MIN_TITLE, Math.floor(size * 0.9));
+      style.fontSize = `${size}px`;
+    }
   }
   new ResizeObserver(fitTitle).observe(bannerTitle);
   document.fonts.addEventListener('loadingdone', fitTitle);
@@ -981,6 +1000,9 @@ const tileText = (k: number) => {
     radius,
   });
   let type: TypeState = fromPairing(pairings[0]);
+  // Font loads finish out of order; only the latest request may change the type.
+  let typeRequest = 0;
+  const cssFamily = (family: string) => `"${family.replace(/["\\]/g, '\\$&')}"`;
 
   // Google serves a family only for weights it has, so ask for the widest range first and narrow down.
   const loaded = new Set(['Schibsted Grotesk', 'Fraunces', 'DM Sans', 'Instrument Serif']);
@@ -1045,8 +1067,8 @@ const tileText = (k: number) => {
   function applyType(save = true) {
     const { heading, body, weight, track, radius } = type;
     const s = studio.style;
-    s.setProperty('--display', `'${heading.family}', ui-serif, serif`);
-    s.setProperty('--body', `'${body.family}', ui-sans-serif, system-ui, sans-serif`);
+    s.setProperty('--display', `${cssFamily(heading.family)}, ui-serif, serif`);
+    s.setProperty('--body', `${cssFamily(body.family)}, ui-sans-serif, system-ui, sans-serif`);
     s.setProperty('--display-weight', String(weight));
     s.setProperty('--track', `${track}em`);
     s.setProperty('--radius', `${radius}px`);
@@ -1086,15 +1108,29 @@ const tileText = (k: number) => {
         : `${hName} carries every headline at ${weight}. ${bName} takes everything functional: labels, tables and body copy. Nothing else competes on the page.`,
     );
     fitTitle();
-    if (save) store.set('type', JSON.stringify(type));
+    if (save) saveType();
+  }
+
+  // Sliders fire many times a second, so the type is written once they settle. Font files are kept
+  // under their own keys, written only when uploaded, so this write stays small.
+  let saveTimer: number | undefined;
+  function saveType() {
+    clearTimeout(saveTimer);
+    saveTimer = window.setTimeout(() => {
+      store.set('type', JSON.stringify(type, (k, v) => (k === 'data' ? undefined : v)));
+      for (const role of ['heading', 'body'] as const) if (type[role].source !== 'file') store.set(`font-${role}`, null);
+    }, 300);
   }
 
   async function setFamily(role: FontRole, family: string) {
     const ui = fontUI(role);
     family = family.trim();
     if (!family) return;
+    const request = ++typeRequest;
     ui.status.textContent = 'Loading…';
-    if (await loadGoogle(family)) {
+    const ok = await loadGoogle(family);
+    if (request !== typeRequest) return;
+    if (ok) {
       type[role] = { source: 'google', family };
       pairingSelect.value = '';
       applyType();
@@ -1111,6 +1147,7 @@ const tileText = (k: number) => {
       const file = ui.fileInput.files?.[0];
       ui.fileInput.value = '';
       if (!file) return;
+      const request = ++typeRequest;
       ui.status.textContent = 'Loading…';
       try {
         const label = file.name.replace(/\.[^.]+$/, '');
@@ -1118,13 +1155,16 @@ const tileText = (k: number) => {
         const face = new FontFace(family, await file.arrayBuffer());
         document.fonts.add(await face.load());
         loaded.add(family);
-        // Keep the file for next time only when it is small enough for localStorage.
-        const data = file.size < 1_500_000 ? await readDataUrl(file) : undefined;
+        // Keep the file for next time when it is small enough and localStorage takes it.
+        let data = file.size < 1_500_000 ? await readDataUrl(file) : undefined;
+        if (request !== typeRequest) return;
+        if (data && !store.set(`font-${role}`, data)) data = undefined;
+        if (!data) store.set(`font-${role}`, null);
         type[role] = { source: 'file', family, label, data };
         pairingSelect.value = '';
         applyType();
       } catch {
-        ui.status.textContent = 'That file isn’t a font this browser can read';
+        if (request === typeRequest) ui.status.textContent = 'That file isn’t a font this browser can read';
       }
     });
   }
@@ -1132,22 +1172,26 @@ const tileText = (k: number) => {
   pairingSelect.addEventListener('change', async () => {
     const p = pairings[+pairingSelect.value];
     if (!pairingSelect.value || !p) return;
-    await Promise.all([loadGoogle(p.heading), loadGoogle(p.body)]);
+    const request = ++typeRequest;
+    const [headOk, bodyOk] = await Promise.all([loadGoogle(p.heading), loadGoogle(p.body)]);
+    if (request !== typeRequest) return;
+    if (!headOk || !bodyOk) {
+      for (const [role, ok] of [['heading', headOk], ['body', bodyOk]] as const)
+        if (!ok) fontUI(role).status.textContent = `Couldn’t load “${p[role]}” from Google Fonts`;
+      pairingSelect.value = '';
+      return;
+    }
     type = fromPairing(p, type.radius);
     applyType();
   });
-  ranges.weight.addEventListener('input', () => {
-    type.weight = +ranges.weight.value;
-    applyType();
-  });
-  ranges.track.addEventListener('input', () => {
-    type.track = +ranges.track.value;
-    applyType();
-  });
-  ranges.radius.addEventListener('input', () => {
-    type.radius = +ranges.radius.value;
-    applyType();
-  });
+  // A slider moved while a font loads wins over that load.
+  for (const key of ['weight', 'track', 'radius'] as const) {
+    ranges[key].addEventListener('input', () => {
+      typeRequest++;
+      type[key] = +ranges[key].value;
+      applyType();
+    });
+  }
   panel.addEventListener('toggle', () => store.set('type-open', panel.open ? '1' : null));
 
   // Palette controls
@@ -1163,6 +1207,8 @@ const tileText = (k: number) => {
   studio.addEventListener('click', (e) => {
     const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
     if (!btn) return;
+    // Any manual palette change takes over from Play.
+    if (btn.dataset.step || btn.dataset.index || ['shift', 'shuffle', 'reset'].includes(btn.dataset.act ?? '')) stop();
     if (btn.dataset.step) select(state.index + +btn.dataset.step);
     else if (btn.dataset.index) select(+btn.dataset.index);
     else if (btn.dataset.act === 'shift') {
@@ -1184,9 +1230,11 @@ const tileText = (k: number) => {
   studio.addEventListener('input', (e) => {
     const input = e.target as HTMLInputElement;
     if (input.dataset.edit === undefined) return;
+    stop();
     studio.dataset.instant = '';
     const k = +input.dataset.edit;
-    state.colors[k] = { ...state.colors[k], hex: input.value.toUpperCase() };
+    // The old name described the old color.
+    state.colors[k] = { hex: input.value.toUpperCase(), name: null };
     state.edited = true;
     render();
   });
@@ -1199,6 +1247,7 @@ const tileText = (k: number) => {
     if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
       e.preventDefault();
+      stop();
       select(state.index + (e.key === 'ArrowLeft' ? -1 : 1));
     }
   });
@@ -1232,10 +1281,24 @@ const tileText = (k: number) => {
     if (saved?.heading && saved.body) type = saved;
   } catch {}
   panel.open = store.get('type-open') === '1';
+  for (const role of ['heading', 'body'] as const) {
+    const c = type[role];
+    if (c.source === 'file') {
+      // Earlier saves kept the file inside the type state; move it to its own key.
+      const kept = store.get(`font-${role}`);
+      if (!kept && c.data) store.set(`font-${role}`, c.data);
+      else c.data = kept ?? undefined;
+    }
+    // A file that wasn't kept can't be shown, so use the default face instead of an unloaded name.
+    if (c.source === 'file' && !c.data) type[role] = fromPairing(pairings[0])[role];
+  }
   applyType(false);
   for (const role of ['heading', 'body'] as const) {
     const c = type[role];
-    (c.source === 'google' ? loadGoogle(c.family) : loadFile(c)).catch(() => {});
+    (c.source === 'google' ? loadGoogle(c.family) : loadFile(c)).catch(() => {
+      type[role] = fromPairing(pairings[0])[role];
+      applyType();
+    });
   }
   const wanted = new URLSearchParams(location.search).get('p') ?? store.get('palette');
   const found = palettes.findIndex((p) => p.id === wanted);
@@ -3420,6 +3483,16 @@ const tileText = (k: number) => {
     font-size: 0.3em;
     color: var(--soft);
     white-space: nowrap;
+  }
+
+  /* The global rule only shortens animations, which would make these loops strobe. */
+  @media (prefers-reduced-motion: reduce) {
+    .banner,
+    .meshy,
+    .seen .pattern .sym,
+    .seen .ui-map .route {
+      animation: none !important;
+    }
   }
 
   /* ---------- Narrow screens ---------- */

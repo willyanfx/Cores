@@ -1,5 +1,4 @@
-import { contrast, inkOn, luminance, oklch } from './color';
-import { mixOklab } from './logo';
+import { contrast, inkOn, luminance, mix, oklch } from './color';
 
 /**
  * Brand roles for the brand studio and the "in use" preview. Free of
@@ -93,10 +92,11 @@ export const BANNER_RAMP = [
 ] as const;
 
 function bannerColor(roles: BrandRoles, t: number): string {
-  const stop = ([a, b, w]: (typeof BANNER_RAMP)[number]) => mixOklab(roles[a], roles[b], w);
+  // `w` is the share of the first color, as in CSS color-mix(); mix() takes the share of the second.
+  const stop = ([a, b, w]: (typeof BANNER_RAMP)[number]) => mix(roles[a], roles[b], 1 - w);
   const x = Math.min(1, Math.max(0, t)) * (BANNER_RAMP.length - 1);
   const i = Math.min(BANNER_RAMP.length - 2, Math.floor(x));
-  return mixOklab(stop(BANNER_RAMP[i]), stop(BANNER_RAMP[i + 1]), 1 - (x - i));
+  return mix(stop(BANNER_RAMP[i]), stop(BANNER_RAMP[i + 1]), x - i);
 }
 
 const ROLE_KEYS = ['paper', 'text', 'primary', 'accent', 'surface', 'deep', 'light'] as const;

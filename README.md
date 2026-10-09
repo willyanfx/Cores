@@ -2,6 +2,8 @@
 
 A static Astro site that collects color palettes extracted from a folder of reference images, deployed to GitHub Pages.
 
+**Live site: [willyanfx.github.io/Cores](https://willyanfx.github.io/Cores/)**, with the [brand lab](https://willyanfx.github.io/Cores/brand/), the [brand studio](https://willyanfx.github.io/Cores/studio/) and the [color of the day](https://willyanfx.github.io/Cores/today/).
+
 ## How it works
 
 1. **Extract.** Images in `palettes_base/` (palette cards) and `reference/` (brand moodboards) were read one by one. Printed hex codes were transcribed and checked against the pixels. Where no code was printed, colors were sampled with `scripts/colors.py`. Each batch lands in `data/extracted/batchN.json`.
