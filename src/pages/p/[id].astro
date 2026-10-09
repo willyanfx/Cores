@@ -181,7 +181,10 @@ pairs.sort((x, y) => y.ratio - x.ratio);
 
     <section class="block">
       <h2>In use</h2>
-      <p class="note">Lightest color as the background, the highest-contrast color as text, the most saturated as the accent.</p>
+      <p class="note">
+        Lightest color as the background, the highest-contrast color as text, the most saturated as the accent.
+        <a href={`${home}studio/?p=${info.palette.id}`}>Try it with your own logo in the brand studio</a>.
+      </p>
       <div
         class="mock"
         style={`--bg:${roles.background};--fg:${roles.text};--accent:${roles.accent};--on-accent:${inkOn(roles.accent)};--surface:${roles.surface};--on-surface:${inkOn(roles.surface)}`}

@@ -2,6 +2,8 @@
 
 A static Astro site that collects color palettes extracted from a folder of reference images, deployed to GitHub Pages.
 
+**Live site: [willyanfx.github.io/Cores](https://willyanfx.github.io/Cores/)**, with the [brand lab](https://willyanfx.github.io/Cores/brand/), the [brand studio](https://willyanfx.github.io/Cores/studio/) and the [color of the day](https://willyanfx.github.io/Cores/today/).
+
 ## How it works
 
 1. **Extract.** Images in `palettes_base/` (palette cards) and `reference/` (brand moodboards) were read one by one. Printed hex codes were transcribed and checked against the pixels. Where no code was printed, colors were sampled with `scripts/colors.py`. Each batch lands in `data/extracted/batchN.json`.
@@ -14,6 +16,10 @@ The source images are git-ignored. Only the extracted colors are published.
 ## Logo
 
 The mark is nested chevron bands on an iOS-style squircle with the outlined "Cores" wordmark, defined in `src/lib/logo.ts`. `logoRamp()` turns any palette into a dark-to-light ramp, one color per band. On the home page `src/components/Logo.astro` starts in monochrome and then moves through every palette in the collection, linking to the one on show. `src/pages/logo.svg.ts` builds a standalone `/logo.svg` that animates through eight palettes on its own, for use outside the site.
+
+## Brand studio
+
+`/studio/` tries a brand on every palette. (The six-color brand lab lives separately at `/brand/`.) Upload a symbol and a wide logo (SVG or PNG; an opaque image has its background knocked out), set a name and tagline, then step through palettes with the arrows, the filmstrip, Shuffle or Play. The board below is a deck of nine slides printed on the palette's own paper: a cover, the logo on every palette color, symbol and logo sheets, the color system with tints, typography, posters, a full-color in-app slide with two phone screens, and applications. Each palette color is a registered CSS `<color>` property, so blocks fade between palettes in a ripple. The cover is a banner of stepped color bands under the tagline. The Type panel takes a pairing preset or any Google Fonts family (or your own .woff2, .woff, .ttf or .otf) for headings and body, with sliders for heading weight, tracking and corner radius. Swatches can be edited, and Swap lead moves the primary role to the next color. Roles and inks come from `src/lib/brand.ts`. Uploads and settings stay in the browser's localStorage, and `?p=<id>` opens a given palette.
 
 ## Commands
 
