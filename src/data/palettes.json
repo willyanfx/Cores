@@ -11998,6 +11998,623 @@
     "source": "palettes_base/HFQ94UWWMAARBLW.jpeg"
   },
   {
+    "id": "mistral-pulpe",
+    "title": "Mistral Pulpe",
+    "code": null,
+    "credit": "@umig.rl",
+    "origin": "palette",
+    "colors": [
+      {
+        "hex": "#A3DFF1",
+        "name": "Mistral",
+        "role": "accent"
+      },
+      {
+        "hex": "#FEE4B8",
+        "name": "Zéphir",
+        "role": "background"
+      },
+      {
+        "hex": "#FFC065",
+        "name": "Solara",
+        "role": "primary"
+      },
+      {
+        "hex": "#FFA43A",
+        "name": "Pulpe",
+        "role": "text"
+      }
+    ],
+    "gradients": [],
+    "tags": [
+      "warm",
+      "pastel",
+      "orange",
+      "blue",
+      "fresh",
+      "summer"
+    ],
+    "confidence": "printed",
+    "source": "palettes_base/mistral-pulpe.jpg"
+  },
+  {
+    "id": "moonstone-saffron",
+    "title": "Moonstone Saffron",
+    "code": null,
+    "credit": "@themoidesign",
+    "origin": "palette",
+    "colors": [
+      {
+        "hex": "#C3E7F1",
+        "name": "Light Blue",
+        "role": "background"
+      },
+      {
+        "hex": "#519CAB",
+        "name": "Moonstone",
+        "role": "accent"
+      },
+      {
+        "hex": "#FFC64F",
+        "name": "Saffron",
+        "role": "primary"
+      },
+      {
+        "hex": "#20373B",
+        "name": "Gunmetal",
+        "role": "text"
+      }
+    ],
+    "gradients": [],
+    "tags": [
+      "cool",
+      "blue",
+      "yellow",
+      "fresh",
+      "summer"
+    ],
+    "confidence": "printed",
+    "source": "palettes_base/moonstone-saffron.jpg"
+  },
+  {
+    "id": "night-daisy-sapphire",
+    "title": "Night Daisy Sapphire",
+    "code": "MP016",
+    "credit": "@AlexCristache",
+    "origin": "palette",
+    "colors": [
+      {
+        "hex": "#F4F3E9",
+        "name": "Fresh Popcorn",
+        "role": "background"
+      },
+      {
+        "hex": "#05092E",
+        "name": "Dead of Night",
+        "role": "text"
+      },
+      {
+        "hex": "#FBEB50",
+        "name": "Paris Daisy",
+        "role": "surface"
+      },
+      {
+        "hex": "#16E9D7",
+        "name": "Polar Aqua",
+        "role": "primary"
+      },
+      {
+        "hex": "#1845CD",
+        "name": "Liquid Sapphire",
+        "role": "accent"
+      },
+      {
+        "hex": "#112691",
+        "name": "Persian Dream",
+        "role": "surface"
+      }
+    ],
+    "gradients": [
+      [
+        "#05092E",
+        "#1845CD"
+      ]
+    ],
+    "tags": [
+      "cool",
+      "blue",
+      "yellow",
+      "aqua",
+      "dark",
+      "vibrant",
+      "bold",
+      "gradient"
+    ],
+    "confidence": "printed",
+    "source": "palettes_base/mp016-096-088-085.jpg"
+  },
+  {
+    "id": "dream-catcher-lantern",
+    "title": "Dream Catcher Lantern",
+    "code": "MP058",
+    "credit": "@AlexCristache",
+    "origin": "palette",
+    "colors": [
+      {
+        "hex": "#E5EBEA",
+        "name": "Dream Catcher",
+        "role": "surface"
+      },
+      {
+        "hex": "#172713",
+        "name": "Deep Slate Olive",
+        "role": "text"
+      },
+      {
+        "hex": "#F7F7F7",
+        "name": "Lynx White",
+        "role": "background"
+      },
+      {
+        "hex": "#AED0C9",
+        "name": "Cassiopeia",
+        "role": "accent"
+      },
+      {
+        "hex": "#374231",
+        "name": "Sensaimidori Green",
+        "role": "surface"
+      },
+      {
+        "hex": "#F09056",
+        "name": "Chinese Lantern",
+        "role": "primary"
+      }
+    ],
+    "gradients": [
+      [
+        "#E5EBEA",
+        "#AED0C9"
+      ]
+    ],
+    "tags": [
+      "cool",
+      "green",
+      "orange",
+      "dark",
+      "muted",
+      "earthy",
+      "gradient"
+    ],
+    "confidence": "printed",
+    "source": "palettes_base/mp058-069-083-117.jpg"
+  },
+  {
+    "id": "brunneous-cabin",
+    "title": "Brunneous Cabin",
+    "code": "MP104",
+    "credit": "@AlexCristache",
+    "origin": "palette",
+    "colors": [
+      {
+        "hex": "#F6F3E7",
+        "name": "Rapture's Light",
+        "role": "background"
+      },
+      {
+        "hex": "#5E4662",
+        "name": "Brunneous",
+        "role": "surface"
+      },
+      {
+        "hex": "#141311",
+        "name": "Dark Veil",
+        "role": "text"
+      },
+      {
+        "hex": "#765A3F",
+        "name": "Wooden Cabin",
+        "role": "primary"
+      },
+      {
+        "hex": "#EBDBC1",
+        "name": "Clam Up",
+        "role": "accent"
+      },
+      {
+        "hex": "#7D8878",
+        "name": "Majestic Evergreen",
+        "role": "surface"
+      }
+    ],
+    "gradients": [
+      [
+        "#5E4662",
+        "#7D8878",
+        "#EBDBC1"
+      ]
+    ],
+    "tags": [
+      "warm",
+      "earthy",
+      "muted",
+      "purple",
+      "brown",
+      "dark",
+      "gradient"
+    ],
+    "confidence": "printed",
+    "source": "palettes_base/mp104-109-134-150.jpg"
+  },
+  {
+    "id": "pinkadelic-firmament",
+    "title": "Pinkadelic Firmament",
+    "code": "MP157",
+    "credit": "@AlexCristache",
+    "origin": "palette",
+    "colors": [
+      {
+        "hex": "#5C2C45",
+        "name": "Vistoris Lake",
+        "role": "surface"
+      },
+      {
+        "hex": "#CB5C5B",
+        "name": "Pinkadelic",
+        "role": "primary"
+      },
+      {
+        "hex": "#F6F4F1",
+        "name": "White Chalk",
+        "role": "background"
+      },
+      {
+        "hex": "#11353F",
+        "name": "Firmament Blue",
+        "role": "text"
+      },
+      {
+        "hex": "#CED2AB",
+        "name": "Olive Martini",
+        "role": "surface"
+      },
+      {
+        "hex": "#155D66",
+        "name": "Tropical Skies",
+        "role": "accent"
+      }
+    ],
+    "gradients": [
+      [
+        "#5C2C45",
+        "#155D66"
+      ]
+    ],
+    "tags": [
+      "cool",
+      "teal",
+      "pink",
+      "dark",
+      "bold",
+      "muted",
+      "gradient"
+    ],
+    "confidence": "printed",
+    "source": "palettes_base/mp157.jpg"
+  },
+  {
+    "id": "desert-rose-coronation",
+    "title": "Desert Rose Coronation",
+    "code": "MP172",
+    "credit": "@AlexCristache",
+    "origin": "palette",
+    "colors": [
+      {
+        "hex": "#FDFAF1",
+        "name": "White Desert",
+        "role": "background"
+      },
+      {
+        "hex": "#02273A",
+        "name": "Murky Depths",
+        "role": "text"
+      },
+      {
+        "hex": "#FADFD2",
+        "name": "Elizabeth Rose",
+        "role": "surface"
+      },
+      {
+        "hex": "#DEBEEF",
+        "name": "Beefy Pink",
+        "role": "accent"
+      },
+      {
+        "hex": "#C6DECF",
+        "name": "Solitaire",
+        "role": "surface"
+      },
+      {
+        "hex": "#59529C",
+        "name": "Coronation Blue",
+        "role": "primary"
+      }
+    ],
+    "gradients": [
+      [
+        "#C7DECE",
+        "#F2DFD1"
+      ],
+      [
+        "#59539B",
+        "#04273B"
+      ],
+      [
+        "#FBE7DC",
+        "#FBF8EF"
+      ]
+    ],
+    "tags": [
+      "pastel",
+      "purple",
+      "blue",
+      "pink",
+      "soft",
+      "dark",
+      "gradient"
+    ],
+    "confidence": "printed",
+    "source": "palettes_base/mp172.jpg"
+  },
+  {
+    "id": "bonfire-night-moss",
+    "title": "Bonfire Night Moss",
+    "code": "MP224",
+    "credit": "@AlexCristache",
+    "origin": "palette",
+    "colors": [
+      {
+        "hex": "#F9F9F9",
+        "name": "Doctor",
+        "role": "background"
+      },
+      {
+        "hex": "#201B20",
+        "name": "Night Demons",
+        "role": "text"
+      },
+      {
+        "hex": "#EAAA96",
+        "name": "Pale Terra",
+        "role": "accent"
+      },
+      {
+        "hex": "#8A877B",
+        "name": "Compass",
+        "role": "surface"
+      },
+      {
+        "hex": "#DE6A41",
+        "name": "Bonfire Night",
+        "role": "primary"
+      },
+      {
+        "hex": "#715B2E",
+        "name": "Moss Brown",
+        "role": "surface"
+      }
+    ],
+    "gradients": [
+      [
+        "#544F4C",
+        "#231E25"
+      ],
+      [
+        "#201B21",
+        "#524C4C"
+      ],
+      [
+        "#4C4847",
+        "#706B65"
+      ]
+    ],
+    "tags": [
+      "warm",
+      "earthy",
+      "dark",
+      "orange",
+      "muted",
+      "neutral",
+      "gradient"
+    ],
+    "confidence": "printed",
+    "source": "palettes_base/mp224.jpg"
+  },
+  {
+    "id": "blue-rose-verdant",
+    "title": "Blue Rose Verdant",
+    "code": "MP232",
+    "credit": "@AlexCristache",
+    "origin": "palette",
+    "colors": [
+      {
+        "hex": "#292D74",
+        "name": "Blue Rose",
+        "role": "text"
+      },
+      {
+        "hex": "#F0CC50",
+        "name": "Radiant Sun",
+        "role": "accent"
+      },
+      {
+        "hex": "#F8F5E9",
+        "name": "Risotto",
+        "role": "background"
+      },
+      {
+        "hex": "#16B8F3",
+        "name": "Zima Blue",
+        "role": "primary"
+      },
+      {
+        "hex": "#00844B",
+        "name": "Veritably Verdant",
+        "role": "surface"
+      },
+      {
+        "hex": "#B2A5D3",
+        "name": "Ariel's Delight",
+        "role": "surface"
+      }
+    ],
+    "gradients": [
+      [
+        "#16B8F3",
+        "#B2A5D3"
+      ],
+      [
+        "#00844B",
+        "#F0CC50"
+      ],
+      [
+        "#B2A5D3",
+        "#00844B"
+      ]
+    ],
+    "tags": [
+      "vibrant",
+      "bold",
+      "blue",
+      "green",
+      "yellow",
+      "purple",
+      "gradient"
+    ],
+    "confidence": "printed",
+    "source": "palettes_base/mp232.jpg"
+  },
+  {
+    "id": "shani-cherry-foam",
+    "title": "Shani Cherry Foam",
+    "code": "MP248",
+    "credit": "@AlexCristache",
+    "origin": "palette",
+    "colors": [
+      {
+        "hex": "#4C1050",
+        "name": "Shani Purple",
+        "role": "surface"
+      },
+      {
+        "hex": "#202030",
+        "name": "Black Howl",
+        "role": "text"
+      },
+      {
+        "hex": "#3D34A5",
+        "name": "Purple Cabbage",
+        "role": "primary"
+      },
+      {
+        "hex": "#BEBEC4",
+        "name": "Moonwalk",
+        "role": "surface"
+      },
+      {
+        "hex": "#F392A0",
+        "name": "Cherry Foam",
+        "role": "accent"
+      },
+      {
+        "hex": "#E3E3DC",
+        "name": "Snow Drift",
+        "role": "background"
+      }
+    ],
+    "gradients": [
+      [
+        "#3D34A5",
+        "#4C1050"
+      ]
+    ],
+    "tags": [
+      "cool",
+      "purple",
+      "pink",
+      "dark",
+      "bold",
+      "vibrant",
+      "gradient"
+    ],
+    "confidence": "printed",
+    "source": "palettes_base/mp248.jpg"
+  },
+  {
+    "id": "pineapple-emerald",
+    "title": "Pineapple Emerald",
+    "code": "MP299",
+    "credit": "@AlexCristache",
+    "origin": "palette",
+    "colors": [
+      {
+        "hex": "#EEEE88",
+        "name": "Pineapple Perfume",
+        "role": "primary"
+      },
+      {
+        "hex": "#4D8C57",
+        "name": "Middle Green",
+        "role": "surface"
+      },
+      {
+        "hex": "#4B1C35",
+        "name": "Chilli Black Red",
+        "role": "text"
+      },
+      {
+        "hex": "#1F6C53",
+        "name": "Sparkling Emerald",
+        "role": "accent"
+      },
+      {
+        "hex": "#F5F3CE",
+        "name": "Moon Glow",
+        "role": "background"
+      },
+      {
+        "hex": "#9ECCA7",
+        "name": "Potted Plant",
+        "role": "surface"
+      }
+    ],
+    "gradients": [
+      [
+        "#EEEE88",
+        "#F5F3CE"
+      ],
+      [
+        "#4D8C57",
+        "#1F6C53"
+      ],
+      [
+        "#F5F3CE",
+        "#9ECCA7"
+      ]
+    ],
+    "tags": [
+      "green",
+      "yellow",
+      "fresh",
+      "vibrant",
+      "natural",
+      "dark",
+      "gradient"
+    ],
+    "confidence": "printed",
+    "source": "palettes_base/mp299.jpg"
+  },
+  {
     "id": "summit-spectrum",
     "title": "Summit Spectrum",
     "code": null,
@@ -12453,6 +13070,61 @@
     "source": "reference/Gv7crULWEAAEafY.jpeg"
   },
   {
+    "id": "ixhera-brand",
+    "title": "Ixhera Brand",
+    "code": null,
+    "credit": "Ixhera",
+    "origin": "brand",
+    "colors": [
+      {
+        "hex": "#051E52",
+        "name": null,
+        "role": "text"
+      },
+      {
+        "hex": "#356DF5",
+        "name": null,
+        "role": "primary"
+      },
+      {
+        "hex": "#388AF8",
+        "name": null,
+        "role": "surface"
+      },
+      {
+        "hex": "#BAF247",
+        "name": null,
+        "role": "accent"
+      },
+      {
+        "hex": "#DBEB44",
+        "name": null,
+        "role": "accent"
+      },
+      {
+        "hex": "#E8E9ED",
+        "name": null,
+        "role": "background"
+      },
+      {
+        "hex": "#616885",
+        "name": null,
+        "role": "surface"
+      }
+    ],
+    "gradients": [],
+    "tags": [
+      "blue",
+      "lime",
+      "vibrant",
+      "bold",
+      "brand",
+      "tech"
+    ],
+    "confidence": "sampled",
+    "source": "reference/ixhera-brand.jpg"
+  },
+  {
     "id": "realm-brand",
     "title": "Realm Brand",
     "code": null,
@@ -12491,5 +13163,105 @@
     ],
     "confidence": "printed",
     "source": "reference/original-203bfe1e6f0b916e4619fdf6c9d7772a.webp"
+  },
+  {
+    "id": "pilapocker-brand",
+    "title": "Pilapocker Brand",
+    "code": null,
+    "credit": "Pilapocker",
+    "origin": "brand",
+    "colors": [
+      {
+        "hex": "#233321",
+        "name": null,
+        "role": "text"
+      },
+      {
+        "hex": "#394A3A",
+        "name": null,
+        "role": "primary"
+      },
+      {
+        "hex": "#436241",
+        "name": null,
+        "role": "accent"
+      },
+      {
+        "hex": "#868B80",
+        "name": null,
+        "role": "surface"
+      },
+      {
+        "hex": "#F8F0E3",
+        "name": null,
+        "role": "background"
+      },
+      {
+        "hex": "#FFFFFF",
+        "name": null,
+        "role": "surface"
+      }
+    ],
+    "gradients": [],
+    "tags": [
+      "green",
+      "earthy",
+      "dark",
+      "muted",
+      "minimal",
+      "brand"
+    ],
+    "confidence": "sampled",
+    "source": "reference/pilapocker-brand.jpg"
+  },
+  {
+    "id": "voltair-brand",
+    "title": "Voltair Brand",
+    "code": null,
+    "credit": "Voltair",
+    "origin": "brand",
+    "colors": [
+      {
+        "hex": "#1EA2F5",
+        "name": null,
+        "role": "primary"
+      },
+      {
+        "hex": "#031D4F",
+        "name": null,
+        "role": "text"
+      },
+      {
+        "hex": "#2B649C",
+        "name": null,
+        "role": "surface"
+      },
+      {
+        "hex": "#C8F22C",
+        "name": null,
+        "role": "accent"
+      },
+      {
+        "hex": "#EFF1FE",
+        "name": null,
+        "role": "background"
+      },
+      {
+        "hex": "#666C86",
+        "name": null,
+        "role": "surface"
+      }
+    ],
+    "gradients": [],
+    "tags": [
+      "blue",
+      "lime",
+      "vibrant",
+      "bold",
+      "brand",
+      "tech"
+    ],
+    "confidence": "sampled",
+    "source": "reference/voltair-brand.jpg"
   }
 ]
