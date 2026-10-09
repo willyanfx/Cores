@@ -57,7 +57,8 @@
       "fresh",
       "vibrant",
       "natural",
-      "dark"
+      "dark",
+      "gradient"
     ],
     "duplicate_of": null,
     "confidence": "printed"
@@ -112,7 +113,8 @@
       "orange",
       "dark",
       "muted",
-      "earthy"
+      "earthy",
+      "gradient"
     ],
     "duplicate_of": null,
     "confidence": "printed"
@@ -157,12 +159,16 @@
     ],
     "gradients": [
       [
-        "#C6DECF",
-        "#FDFAF1"
+        "#C7DECE",
+        "#F2DFD1"
       ],
       [
-        "#59529C",
-        "#02273A"
+        "#59539B",
+        "#04273B"
+      ],
+      [
+        "#FBE7DC",
+        "#FBF8EF"
       ]
     ],
     "tags": [
@@ -171,7 +177,8 @@
       "blue",
       "pink",
       "soft",
-      "dark"
+      "dark",
+      "gradient"
     ],
     "duplicate_of": null,
     "confidence": "printed"
@@ -227,7 +234,8 @@
       "muted",
       "purple",
       "brown",
-      "dark"
+      "dark",
+      "gradient"
     ],
     "duplicate_of": null,
     "confidence": "printed"
@@ -282,7 +290,8 @@
       "pink",
       "dark",
       "bold",
-      "muted"
+      "muted",
+      "gradient"
     ],
     "duplicate_of": null,
     "confidence": "printed"
@@ -338,7 +347,8 @@
       "aqua",
       "dark",
       "vibrant",
-      "bold"
+      "bold",
+      "gradient"
     ],
     "duplicate_of": null,
     "confidence": "printed"
@@ -383,8 +393,16 @@
     ],
     "gradients": [
       [
-        "#201B20",
-        "#8A877B"
+        "#544F4C",
+        "#231E25"
+      ],
+      [
+        "#201B21",
+        "#524C4C"
+      ],
+      [
+        "#4C4847",
+        "#706B65"
       ]
     ],
     "tags": [
@@ -393,7 +411,8 @@
       "dark",
       "orange",
       "muted",
-      "neutral"
+      "neutral",
+      "gradient"
     ],
     "duplicate_of": null,
     "confidence": "printed"
@@ -512,7 +531,8 @@
       "pink",
       "dark",
       "bold",
-      "vibrant"
+      "vibrant",
+      "gradient"
     ],
     "duplicate_of": null,
     "confidence": "printed"
@@ -666,17 +686,17 @@
       {
         "hex": "#388AF8",
         "name": null,
-        "role": "accent"
+        "role": "surface"
       },
       {
         "hex": "#BAF247",
         "name": null,
-        "role": "surface"
+        "role": "accent"
       },
       {
         "hex": "#DBEB44",
         "name": null,
-        "role": "surface"
+        "role": "accent"
       },
       {
         "hex": "#E8E9ED",
@@ -709,29 +729,34 @@
     "credit": "Pilapocker",
     "colors": [
       {
-        "hex": "#333A33",
+        "hex": "#233321",
         "name": null,
         "role": "text"
       },
       {
         "hex": "#394A3A",
         "name": null,
+        "role": "primary"
+      },
+      {
+        "hex": "#436241",
+        "name": null,
         "role": "accent"
       },
       {
-        "hex": "#4D594D",
+        "hex": "#868B80",
         "name": null,
         "role": "surface"
       },
       {
         "hex": "#F8F0E3",
         "name": null,
-        "role": "primary"
+        "role": "background"
       },
       {
         "hex": "#FFFFFF",
         "name": null,
-        "role": "background"
+        "role": "surface"
       }
     ],
     "gradients": null,
