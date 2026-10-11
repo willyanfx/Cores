@@ -1,0 +1,39 @@
+---
+/**
+ * One page of the studio's guidelines deck, printed on the palette's paper
+ * (or its deepest color when `dark`). Styled by the studio page.
+ */
+interface Props {
+  title: string;
+  sub: string;
+  n: number;
+  total: number;
+  palette: string;
+  span?: boolean;
+  dark?: boolean;
+  /** Printed full-bleed on the palette's light color. */
+  fill?: boolean;
+  /** No title row: the slide is all picture, captioned in the footer. */
+  bare?: boolean;
+}
+
+const { title, sub, n, total, palette, span, dark, fill, bare } = Astro.props;
+const pad = (x: number) => String(x).padStart(2, '0');
+---
+
+<article class:list={['block', { span, dark, fill, bare }]} style={`--i:${n}`} aria-label={bare ? title : undefined}>
+  <header class="bhead" hidden={bare}>
+    <div>
+      <h2>{title}</h2>
+      <p>{sub}</p>
+    </div>
+    <slot name="aside">
+      <p class="meta"><span data-name>Cores</span> — Identity system<br /><span data-ptitle>{palette}</span></p>
+    </slot>
+  </header>
+  <slot />
+  <footer class="bfoot">
+    <span>{pad(n)} / {pad(total)}</span>
+    <span>{sub}</span>
+  </footer>
+</article>

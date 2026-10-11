@@ -1,0 +1,16 @@
+---
+/**
+ * The brand's logo in the studio: the uploaded wide logo when there is one,
+ * otherwise the symbol beside the typed name. Styled by the studio page.
+ */
+interface Props {
+  class?: string;
+}
+
+const { class: className } = Astro.props;
+---
+
+<span class:list={['lockup', className]}>
+  <i class="lock"></i>
+  <span class="lock-text"><i class="sym"></i><b data-name>Cores</b></span>
+</span>
