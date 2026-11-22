@@ -21,6 +21,10 @@ The mark is nested chevron bands on an iOS-style squircle with the outlined "Cor
 
 `/studio/` tries a brand on every palette. (The six-color brand lab lives separately at `/brand/`.) Upload a symbol and a wide logo (SVG or PNG; an opaque image has its background knocked out), set a name and tagline, then step through palettes with the arrows, the filmstrip, Shuffle or Play. The board below is a deck of nine slides printed on the palette's own paper: a cover, the logo on every palette color, symbol and logo sheets, the color system with tints, typography, posters, a full-color in-app slide with two phone screens, and applications. Each palette color is a registered CSS `<color>` property, so blocks fade between palettes in a ripple. The cover is a banner of stepped color bands under the tagline. The Type panel takes a pairing preset or any Google Fonts family (or your own .woff2, .woff, .ttf or .otf) for headings and body, with sliders for heading weight, tracking and corner radius. Swatches can be edited, and Swap lead moves the primary role to the next color. Roles and inks come from `src/lib/brand.ts`. Uploads and settings stay in the browser's localStorage, and `?p=<id>` opens a given palette.
 
+## Design system
+
+`/system/` documents the site's own design system: the logo and how it takes on a palette, the five interface color tokens with their light and dark values, hue families and color roles, the type scale, layout and radius, motion curves, the palette card and logo rendered live beside specimens of the controls, contrast checks, do and don't pairs, and the full token block. Token values are read from `src/styles/global.css` at build time, so the page stays in step with the CSS. A numbered contents rail on the left tracks the section in view.
+
 ## Commands
 
 | Command             | What it does                                 |
