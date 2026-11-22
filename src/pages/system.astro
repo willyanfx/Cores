@@ -1,0 +1,2441 @@
+---
+import Base from '../layouts/Base.astro';
+import Logo from '../components/Logo.astro';
+import PaletteCard from '../components/PaletteCard.astro';
+import globalCss from '../styles/global.css?raw';
+import { HUES, contrast, formatOklch, hueFamily, inkOn, oklch, wcagLevel } from '../lib/color';
+import { BANDS, MONO, SHAPE, SIZE, WORDMARK, logoRamp, type LogoRamp } from '../lib/logo';
+import { assignRoles, getPalettes, href } from '../lib/palettes';
+import { brandRoles } from '../lib/brand';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+// ---------------------------------------------------------------------------
+// Tokens, read from global.css so this page can't drift from the real values.
+// ---------------------------------------------------------------------------
+const block = (css: string) => {
+  const vars: Record<string, string> = {};
+  for (const m of css.matchAll(/--([\w-]+):\s*([^;]+);/g)) vars[m[1]] = m[2].trim();
+  return vars;
+};
+const rootCss = globalCss.match(/:root\s*{([^}]*)}/)?.[1] ?? '';
+const darkCss = globalCss.match(/prefers-color-scheme:\s*dark\)\s*{\s*:root\s*{([^}]*)}/)?.[1] ?? '';
+const rootRaw = [
+  globalCss.match(/:root\s*{[^}]*}/)?.[0],
+  globalCss.match(/@media \(prefers-color-scheme:\s*dark\)\s*{\s*:root\s*{[^}]*}\s*}/)?.[0],
+]
+  .filter(Boolean)
+  .join('\n\n');
+const light = block(rootCss);
+const dark = block(darkCss);
+
+const COLOR_TOKENS: [name: string, use: string][] = [
+  ['ground', 'The page. Everything sits on it.'],
+  ['raised', 'Fields, selected pills and code blocks, one step up from the page.'],
+  ['ink', 'Text, primary buttons, the toast and the focus ring.'],
+  ['muted', 'Secondary text: counts, captions, labels.'],
+  ['rule', 'Hairlines: dividers, field borders, card outlines.'],
+];
+const colorTokens = COLOR_TOKENS.map(([name, use]) => ({ name, use, light: light[name], dark: dark[name] }));
+
+const TYPE_STEPS: [token: string, role: string, sample: string][] = [
+  ['step-3', 'Reserved; the floor for section titles here', 'Color leads the way'],
+  ['step-2', 'Section headings, large color names', 'Contrast and exports'],
+  ['step-1', 'Site name in the top bar, contrast samples', 'Cores'],
+  ['step-0', 'Body and card titles', 'Click any swatch to copy its value.'],
+  ['step--1', 'Labels, captions, pills', '5 colors · Contrast 12:1'],
+];
+const typeSteps = TYPE_STEPS.map(([token, role, sample]) => ({ token, role, sample, size: light[token] }));
+
+// ---------------------------------------------------------------------------
+// Collection facts
+// ---------------------------------------------------------------------------
+const infos = await getPalettes();
+const allHexes = [...new Set(infos.flatMap(({ palette }) => palette.data.colors.map((c) => c.hex)))];
+const brandCount = infos.filter((i) => i.palette.data.origin === 'brand').length;
+
+const byHue = [...infos].sort((a, b) => a.leadHue - b.leadHue);
+const pick = (f: number) => byHue[Math.min(byHue.length - 1, Math.floor(byHue.length * f))];
+
+// Hue families: same swatch rule as the home page filters.
+const hueRows = HUES.map((h) => {
+  const score = (hex: string) => {
+    const { l, c } = oklch(hex);
+    return h === 'neutral' ? -Math.abs(l - 0.75) : c - Math.abs(l - 0.65) * 0.3;
+  };
+  const hits = allHexes.filter((hex) => hueFamily(hex) === h);
+  const swatch = [...hits].sort((a, b) => score(b) - score(a))[0] ?? '#888888';
+  return { hue: h, swatch, colors: hits.length, palettes: infos.filter((i) => i.hues.includes(h)).length };
+}).filter((r) => r.colors > 0);
+
+// A rich palette to demonstrate roles with.
+const sample =
+  [...infos]
+    .filter((i) => i.palette.data.colors.length >= 5 && i.palette.data.colors.length <= 7)
+    .sort((a, b) => oklch(b.lead).c - oklch(a.lead).c)[0] ?? infos[0];
+const sampleColors = sample.palette.data.colors;
+const ui = assignRoles(sampleColors);
+const brand = brandRoles(sampleColors);
+const uiRoles = [
+  ['background', ui.background, 'Lightest color, unless the source names one'],
+  ['surface', ui.surface, 'Any color left after accent'],
+  ['text', ui.text, 'Highest contrast against background'],
+  ['accent', ui.accent, 'Most chromatic color'],
+] as const;
+const brandRoleRows = [
+  ['paper', brand.paper],
+  ['text', brand.text],
+  ['primary', brand.primary],
+  ['accent', brand.accent],
+  ['surface', brand.surface],
+  ['deep', brand.deep],
+  ['light', brand.light],
+] as const;
+
+// Logo dressed in a few palettes spread round the hue wheel.
+const logoFills = ({ ground, bands, ink }: LogoRamp) => [ground, ...bands, ink];
+const logoSamples = [
+  { title: 'Monochrome', ramp: MONO },
+  ...[0.12, 0.45, 0.8].map((f) => {
+    const p = pick(f).palette;
+    return { title: p.data.title, url: href(p.id), ramp: logoRamp(p.data.colors.map((c) => c.hex)) };
+  }),
+].map((s, i) => ({ ...s, fills: logoFills(s.ramp), clip: `sys-logo-${i}` }));
+
+// Cards to show the palette card component live.
+const cardSamples = [pick(0.05), pick(0.38), pick(0.7)];
+
+// ---------------------------------------------------------------------------
+// Accessibility numbers, computed from the same tokens.
+// ---------------------------------------------------------------------------
+const fmt = (r: number) => `${r >= 10 ? r.toFixed(0) : r.toFixed(1)}:1`;
+const pairRows = [
+  ['ink', 'ground'],
+  ['muted', 'ground'],
+  ['ink', 'raised'],
+  ['muted', 'raised'],
+  ['ground', 'ink'],
+].map(([fg, bg]) => {
+  const l = contrast(light[fg], light[bg]);
+  const d = contrast(dark[fg], dark[bg]);
+  return { fg, bg, light: fmt(l), lightLevel: wcagLevel(l), dark: fmt(d), darkLevel: wcagLevel(d) };
+});
+
+// Do / don't: text on a light chromatic swatch.
+const lightChip =
+  allHexes
+    .filter((h) => oklch(h).c > 0.1 && oklch(h).l > 0.8)
+    .sort((a, b) => oklch(b).c - oklch(a).c)[0] ?? '#F2D14B';
+const goodInk = inkOn(lightChip);
+const badInk = goodInk === '#000000' ? '#FFFFFF' : '#000000';
+const goodRatio = fmt(contrast(lightChip, goodInk));
+const badRatio = fmt(contrast(lightChip, badInk));
+const tintAccent = pick(0.45).lead;
+
+const NAV = [
+  {
+    group: 'Foundation',
+    items: [
+      ['overview', 'Overview'],
+      ['logo', 'Logo'],
+      ['color', 'Color'],
+      ['type', 'Typography'],
+      ['layout', 'Layout'],
+      ['motion', 'Motion'],
+    ],
+  },
+  {
+    group: 'Components',
+    items: [
+      ['swatches', 'Swatches'],
+      ['controls', 'Controls'],
+      ['feedback', 'Feedback'],
+    ],
+  },
+  {
+    group: 'Guidelines',
+    items: [
+      ['a11y', 'Accessibility'],
+      ['dos', 'Do and don’t'],
+      ['tokens', 'Tokens'],
+    ],
+  },
+];
+let n = 0;
+const nav = NAV.map((g) => ({ ...g, items: g.items.map(([id, label]) => ({ id, label, num: String(++n).padStart(2, '0') })) }));
+const num = Object.fromEntries(nav.flatMap((g) => g.items.map((i) => [i.id, i.num])));
+---
+
+<Base title="Design system · Cores" description="The tokens, type, components and rules behind Cores.">
+  <link
+    slot="head"
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&display=swap"
+  />
+
+  <div class="shell">
+    <aside class="rail" aria-label="Design system contents">
+      <a class="home" href={`${base}/`}>
+        <b>Cores</b>
+        <span>Design system</span>
+      </a>
+      <nav class="toc">
+        {
+          nav.map((g) => (
+            <div class="group">
+              <p class="group-label">{g.group}</p>
+              <ol>
+                {g.items.map((i) => (
+                  <li>
+                    <a href={`#${i.id}`} data-spy={i.id}>
+                      <span class="num">{i.num}</span>
+                      {i.label}
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ))
+        }
+      </nav>
+      <a class="cta" href={`${base}/`}>Browse the palettes</a>
+    </aside>
+
+    <main class="doc">
+      <!-- Overview ---------------------------------------------------------->
+      <header class="hero" id="overview" data-section>
+        <p class="eyebrow"><i></i>Cores design system</p>
+        <h1>The palette leads. The interface steps back.</h1>
+        <p class="lede">
+          The rules behind Cores: the mark, the five gray tokens, the type scale and the small set of controls that
+          frame {infos.length} palettes without competing with them.
+        </p>
+        <dl class="stats">
+          <div><dt>Collection</dt><dd>{infos.length} palettes, {brandCount} brand systems</dd></div>
+          <div><dt>Colors</dt><dd>{allHexes.length} unique values</dd></div>
+          <div><dt>Type</dt><dd>Schibsted Grotesk, four weights</dd></div>
+          <div><dt>Interface</dt><dd>5 tokens, light and dark</dd></div>
+        </dl>
+
+        <ol class="principles">
+          <li>
+            <span class="num">01</span>
+            <h3>Gray holds the frame</h3>
+            <p>The chrome is warm gray only, so every palette reads true and no UI color is mistaken for part of it.</p>
+          </li>
+          <li>
+            <span class="num">02</span>
+            <h3>Every value copies</h3>
+            <p>A swatch is a button. Click it and the hex lands on the clipboard, confirmed by a toast in that color.</p>
+          </li>
+          <li>
+            <span class="num">03</span>
+            <h3>Ink picks itself</h3>
+            <p>Text on a swatch is black or white, whichever has more contrast. Nobody picks it by eye.</p>
+          </li>
+        </ol>
+      </header>
+
+      <!-- Logo -------------------------------------------------------------->
+      <section id="logo" data-section>
+        <div class="sec-head">
+          <span class="num">{num.logo}</span>
+          <div>
+            <h2>Logo</h2>
+            <p>
+              Twelve nested chevron bands on a squircle, under an outlined wordmark. The mark has no fixed colors: it
+              wears whichever palette it sits beside.
+            </p>
+          </div>
+        </div>
+
+        <div class="logo-stage">
+          <Logo class="logo-live" />
+          <p class="note">
+            Live: the home page mark starts in monochrome, then walks through every palette in the collection and links
+            to the one on show.
+          </p>
+        </div>
+
+        <h3 class="sub">Dressed in a palette</h3>
+        <div class="logo-grid">
+          {
+            logoSamples.map((s) => (
+              <figure>
+                <svg viewBox={`0 0 ${SIZE} ${SIZE}`} role="img" aria-label={`Cores logo in ${s.title}`}>
+                  <defs>
+                    <clipPath id={s.clip}>
+                      <path d={SHAPE} />
+                    </clipPath>
+                  </defs>
+                  <g clip-path={`url(#${s.clip})`}>
+                    <rect width={SIZE} height={SIZE} fill={s.fills[0]} />
+                    {BANDS.map((pts, i) => (
+                      <polygon points={pts} fill={s.fills[i + 1]} />
+                    ))}
+                  </g>
+                  <path d={WORDMARK} fill={s.fills[s.fills.length - 1]} />
+                </svg>
+                <figcaption>
+                  {s.url ? <a href={s.url}>{s.title}</a> : s.title}
+                  <span class="ramp">
+                    {s.fills.map((f) => (
+                      <i style={`--c:${f}`} />
+                    ))}
+                  </span>
+                </figcaption>
+              </figure>
+            ))
+          }
+        </div>
+
+        <ol class="rules">
+          <li><b>Ground</b> The palette's most colorful value that still carries white text at 5:1 or better.</li>
+          <li><b>Bands</b> Walk from the ground to the lightest color in OKLab, in lightness steps that start slow.</li>
+          <li><b>Wordmark</b> The lightest color when it reads on the ground, otherwise white.</li>
+        </ol>
+      </section>
+
+      <!-- Color ------------------------------------------------------------->
+      <section id="color" data-section>
+        <div class="sec-head">
+          <span class="num">{num.color}</span>
+          <div>
+            <h2>Color</h2>
+            <p>
+              Five interface tokens, each with a light and a dark value that follow the system setting. Click any value
+              to copy it.
+            </p>
+          </div>
+        </div>
+
+        <h3 class="sub">Interface tokens</h3>
+        <div class="tokens">
+          {
+            colorTokens.map((t) => (
+              <article class="token">
+                <div class="token-name">
+                  <button
+                    type="button"
+                    class="code-chip"
+                    data-copy={`var(--${t.name})`}
+                    aria-label={`Copy var(--${t.name})`}
+                  >
+                    --{t.name}
+                  </button>
+                  <p>{t.use}</p>
+                </div>
+                <div class="modes">
+                  {[
+                    ['Light', t.light],
+                    ['Dark', t.dark],
+                  ].map(([mode, hex]) => (
+                    <button
+                      type="button"
+                      class="mode"
+                      data-copy={hex}
+                      data-swatch={hex}
+                      aria-label={`Copy ${mode.toLowerCase()} ${t.name}, ${hex}`}
+                    >
+                      <i style={`--c:${hex}`} />
+                      <span>
+                        <small>{mode}</small>
+                        <span class="hex">{hex}</span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </article>
+            ))
+          }
+        </div>
+
+        <h3 class="sub">Hue families</h3>
+        <p class="sub-lede">
+          Every color in the collection falls into one of {hueRows.length} families by OKLCH hue. They drive the hue
+          filter on the home page.
+        </p>
+        <div class="hues-grid">
+          {
+            hueRows.map((h) => (
+              <button
+                type="button"
+                class="hue-card"
+                data-copy={h.swatch}
+                data-swatch={h.swatch}
+                data-label={`${h.hue}, ${h.swatch}`}
+                style={`--c:${h.swatch};--on:${inkOn(h.swatch)}`}
+              >
+                <span class="hue-fill">
+                  <span class="hex">{h.swatch}</span>
+                </span>
+                <span class="hue-meta">
+                  <b>{h.hue}</b>
+                  <span>
+                    {h.colors} colors · {h.palettes} palettes
+                  </span>
+                </span>
+              </button>
+            ))
+          }
+        </div>
+
+        <h3 class="sub">Roles</h3>
+        <p class="sub-lede">
+          Palettes carry no fixed roles. Cores assigns them from contrast and chroma, shown here on <a
+            href={href(sample.palette.id)}>{sample.palette.data.title}</a
+          >.
+        </p>
+        <div class="roles">
+          <div class="role-set">
+            <p class="role-title">In-use preview <code>assignRoles()</code></p>
+            {
+              uiRoles.map(([role, hex, why]) => (
+                <button type="button" class="role" data-copy={hex} data-swatch={hex} data-label={`${role}, ${hex}`}>
+                  <i style={`--c:${hex}`} />
+                  <span class="role-name">{role}</span>
+                  <span class="role-why">{why}</span>
+                  <span class="hex">{hex}</span>
+                </button>
+              ))
+            }
+          </div>
+          <div class="role-set">
+            <p class="role-title">Brand studio <code>brandRoles()</code></p>
+            <div class="role-strip">
+              {
+                brandRoleRows.map(([role, hex]) => (
+                  <button
+                    type="button"
+                    style={`--c:${hex};--on:${inkOn(hex)}`}
+                    data-copy={hex}
+                    data-swatch={hex}
+                    data-label={`${role}, ${hex}`}
+                  >
+                    <span>{role}</span>
+                    <span class="hex">{hex}</span>
+                  </button>
+                ))
+              }
+            </div>
+            <div
+              class="mini"
+              style={`--p:${brand.paper};--t:${brand.text};--a:${brand.primary};--s:${brand.surface}`}
+              aria-hidden="true"
+            >
+              <span class="mini-kicker">Roles in use</span>
+              <b>{sample.palette.data.title}</b>
+              <span class="mini-btn">Primary</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Typography -------------------------------------------------------->
+      <section id="type" data-section>
+        <div class="sec-head">
+          <span class="num">{num.type}</span>
+          <div>
+            <h2>Typography</h2>
+            <p>
+              Schibsted Grotesk throughout, on a 1.25 scale from a 16px base. IBM Plex Mono appears only where values
+              are printed as specimens.
+            </p>
+          </div>
+        </div>
+
+        <div class="specimen">
+          <p class="display">Aa</p>
+          <div>
+            <p class="family">Schibsted Grotesk</p>
+            <div class="weights">
+              <span style="font-weight:400">400 Regular</span>
+              <span style="font-weight:500">500 Medium</span>
+              <span style="font-weight:700">700 Bold</span>
+              <span style="font-weight:800">800 Extra bold</span>
+            </div>
+            <p class="mono-line">IBM Plex Mono 400 / 600 · {light.ink.toUpperCase()} · {formatOklch(light.ink.toUpperCase())}</p>
+          </div>
+        </div>
+
+        <h3 class="sub">Display</h3>
+        <div class="type-row display-row">
+          <div class="type-meta">
+            <b>Page title</b>
+            <span>clamp(2.5rem, 7vw, 5.5rem) · 800 · −0.045em · 0.92</span>
+          </div>
+          <p class="t-display">Golden hour</p>
+        </div>
+
+        <h3 class="sub">Scale</h3>
+        {
+          typeSteps.map((s) => (
+            <div class="type-row">
+              <div class="type-meta">
+                <button type="button" class="code-chip" data-copy={`var(--${s.token})`}>
+                  --{s.token}
+                </button>
+                <span>
+                  {s.size} · {s.role}
+                </span>
+              </div>
+              <p style={`font-size:var(--${s.token});font-weight:${s.token === 'step-3' || s.token === 'step-2' ? 700 : s.token === 'step-1' ? 500 : 400}`}>
+                {s.sample}
+              </p>
+            </div>
+          ))
+        }
+
+        <ul class="facts-list">
+          <li><b>Headings</b> 700, line height 1.1, tracking −0.02em, balanced wrap.</li>
+          <li><b>Body</b> 400, line height 1.5, pretty wrap.</li>
+          <li><b>Values</b> Hex codes use tabular figures so columns line up.</li>
+        </ul>
+      </section>
+
+      <!-- Layout ------------------------------------------------------------>
+      <section id="layout" data-section>
+        <div class="sec-head">
+          <span class="num">{num.layout}</span>
+          <div>
+            <h2>Layout</h2>
+            <p>A fluid gutter, a wide cap and a card grid that fills whatever width it gets.</p>
+          </div>
+        </div>
+
+        <div class="layout-grid">
+          <article class="spec">
+            <button type="button" class="code-chip" data-copy="var(--gutter)">--gutter</button>
+            <p class="spec-value">{light.gutter}</p>
+            <div class="gutter-demo" aria-hidden="true"><span></span><span></span></div>
+            <p>Side padding. 16px on a phone, up to 40px on a wide screen.</p>
+          </article>
+          <article class="spec">
+            <button type="button" class="code-chip" data-copy="var(--max)">--max</button>
+            <p class="spec-value">{light.max}</p>
+            <div class="max-demo" aria-hidden="true"><span></span></div>
+            <p>The <code>.wrap</code> container caps here and centers.</p>
+          </article>
+          <article class="spec">
+            <span class="code-chip static">.grid</span>
+            <p class="spec-value">minmax(15.5rem, 1fr)</p>
+            <div class="grid-demo" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+            <p>Palette cards auto-fill. Gaps are 2rem down, 1 to 1.75rem across.</p>
+          </article>
+        </div>
+
+        <h3 class="sub">Radius</h3>
+        <div class="radii">
+          {
+            [
+              ['4px', 'Chips on the stage'],
+              ['6px', 'Cards, fields, code blocks, buttons'],
+              ['999px', 'Pills: hue filters, tags, tabs, toast'],
+              ['50%', 'Dots: hue swatches, toast swatch'],
+            ].map(([r, use]) => (
+              <div class="radius">
+                <span class="radius-box" style={`border-radius:${r}`} />
+                <b>{r}</b>
+                <span>{use}</span>
+              </div>
+            ))
+          }
+        </div>
+      </section>
+
+      <!-- Motion ------------------------------------------------------------>
+      <section id="motion" data-section>
+        <div class="sec-head">
+          <span class="num">{num.motion}</span>
+          <div>
+            <h2>Motion</h2>
+            <p>
+              Short, eased and only where something changes size or color. Everything drops to near zero under reduced
+              motion. Hover or focus a row to play it.
+            </p>
+          </div>
+        </div>
+
+        <div class="motion-list">
+          {
+            [
+              ['Settle', 'cubic-bezier(0.2, 0.8, 0.2, 1)', '220ms', 'A card chip widening on hover; chips rising on load (700ms).'],
+              ['Glide', 'cubic-bezier(0.7, 0, 0.2, 1)', '750ms', 'The home stage sliding to the next palette.'],
+              ['Fade', 'cubic-bezier(0.4, 0, 0.2, 1)', '900ms', 'The logo changing palette, band by band 45ms apart.'],
+              ['Toast', 'ease', '160ms', 'The copy toast fading and lifting in.'],
+            ].map(([name, curve, dur, use]) => (
+              <button type="button" class="motion" style={`--ease:${curve};--dur:${dur}`} data-copy={`${dur} ${curve}`}>
+                <span class="motion-name">
+                  <b>{name}</b>
+                  <span class="hex">
+                    {dur} · {curve}
+                  </span>
+                </span>
+                <span class="track" aria-hidden="true">
+                  <span class="dot" />
+                </span>
+                <span class="motion-use">{use}</span>
+              </button>
+            ))
+          }
+        </div>
+      </section>
+
+      <!-- Swatches ---------------------------------------------------------->
+      <section id="swatches" data-section>
+        <div class="sec-head">
+          <span class="num">{num.swatches}</span>
+          <div>
+            <h2>Swatches</h2>
+            <p>
+              The core component. A palette card is a row of chips that copy on click, with the title linking to the
+              palette page.
+            </p>
+          </div>
+        </div>
+
+        <div class="preview">
+          <div class="preview-bar"><span>PaletteCard</span><span>src/components/PaletteCard.astro</span></div>
+          <div class="preview-body cards">
+            {cardSamples.map((info, i) => <PaletteCard info={info} order={i} />)}
+          </div>
+        </div>
+        <ul class="facts-list">
+          <li><b>Hover</b> The chip under the pointer grows 2.6× and shows its hex.</li>
+          <li><b>Touch</b> Hex labels stay visible since there is no hover.</li>
+          <li><b>Frame</b> 6px radius and a 1px inset rule so pale chips don't melt into the page.</li>
+        </ul>
+
+        <h3 class="sub">Stage chip</h3>
+        <div class="preview">
+          <div class="preview-bar"><span>Chip</span><span>Home page stage</span></div>
+          <div class="preview-body chip-row">
+            {
+              sample.palette.data.colors.map((c, i) => (
+                <span
+                  class:list={['stage-chip', { open: i === 1 }]}
+                  style={`--c:${c.hex};--on:${inkOn(c.hex)}`}
+                >
+                  {i === 1 ? (
+                    <>
+                      <b>{c.name ?? c.role ?? 'Color'}</b>
+                      <span class="hex">{c.hex}</span>
+                    </>
+                  ) : (
+                    <b>{Math.round(oklch(c.hex).l * 100)}</b>
+                  )}
+                </span>
+              ))
+            }
+          </div>
+        </div>
+        <p class="note">Closed chips show OKLCH lightness. The open chip shows the name and hex.</p>
+      </section>
+
+      <!-- Controls ---------------------------------------------------------->
+      <section id="controls" data-section>
+        <div class="sec-head">
+          <span class="num">{num.controls}</span>
+          <div>
+            <h2>Controls</h2>
+            <p>Few and quiet. Pressed state is an ink border on a raised fill, never an accent color.</p>
+          </div>
+        </div>
+
+        <div class="comp-grid">
+          <div class="preview">
+            <div class="preview-bar"><span>Button</span></div>
+            <div class="preview-body center">
+              <button type="button" class="btn">Clear filters</button>
+              <button type="button" class="btn-pill">Copy</button>
+            </div>
+          </div>
+
+          <div class="preview">
+            <div class="preview-bar"><span>Search field</span></div>
+            <div class="preview-body center">
+              <label class="field">
+                <span class="visually-hidden">Search palettes (demo)</span>
+                <input type="search" placeholder="Search by name, color or hex" />
+              </label>
+            </div>
+          </div>
+
+          <div class="preview">
+            <div class="preview-bar"><span>Hue filter</span></div>
+            <div class="preview-body center wrap-row" data-toggle-group>
+              {
+                hueRows.slice(0, 5).map((h, i) => (
+                  <button type="button" class="hue-pill" aria-pressed={i === 1 ? 'true' : 'false'}>
+                    <i style={`--c:${h.swatch}`} />
+                    <span>{h.hue}</span>
+                  </button>
+                ))
+              }
+            </div>
+          </div>
+
+          <div class="preview">
+            <div class="preview-bar"><span>Tag</span></div>
+            <div class="preview-body center wrap-row" data-toggle-group>
+              {
+                ['brand systems', 'warm', 'muted', 'earthy'].map((t, i) => (
+                  <button type="button" class="tag" aria-pressed={i === 0 ? 'true' : 'false'}>
+                    {t}
+                  </button>
+                ))
+              }
+            </div>
+          </div>
+
+          <div class="preview">
+            <div class="preview-bar"><span>Tabs</span></div>
+            <div class="preview-body center">
+              <div class="tabs" role="tablist" aria-label="Export format (demo)">
+                {
+                  ['CSS', 'Tailwind', 'JSON'].map((t, i) => (
+                    <button type="button" role="tab" aria-selected={i === 0 ? 'true' : 'false'}>
+                      {t}
+                    </button>
+                  ))
+                }
+              </div>
+            </div>
+          </div>
+
+          <div class="preview">
+            <div class="preview-bar"><span>Select</span></div>
+            <div class="preview-body center">
+              <label class="sort">
+                <span>Sort</span>
+                <select>
+                  <option>By hue</option>
+                  <option>A to Z</option>
+                  <option>Lightest first</option>
+                  <option>Darkest first</option>
+                </select>
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Feedback ---------------------------------------------------------->
+      <section id="feedback" data-section>
+        <div class="sec-head">
+          <span class="num">{num.feedback}</span>
+          <div>
+            <h2>Feedback</h2>
+            <p>
+              One pattern: the toast. It confirms a copy, shows the copied color and leaves after 1.6 seconds. Any
+              element with <code>data-copy</code> triggers it.
+            </p>
+          </div>
+        </div>
+
+        <div class="preview">
+          <div class="preview-bar"><span>Toast</span><span>src/layouts/Base.astro</span></div>
+          <div class="preview-body center col">
+            <div class="toast-static" aria-hidden="true">
+              <i style={`background:${sample.lead}`}></i><span>Copied {sample.lead}</span>
+            </div>
+            <button type="button" class="btn" data-copy={sample.lead} data-swatch={sample.lead}>Trigger it</button>
+          </div>
+        </div>
+        <ul class="facts-list">
+          <li><b>Attributes</b> <code>data-copy</code> is the value, <code>data-swatch</code> paints the dot, <code>data-label</code> overrides the text.</li>
+          <li><b>Announce</b> The toast is a polite live region, so screen readers hear it.</li>
+        </ul>
+      </section>
+
+      <!-- Accessibility ----------------------------------------------------->
+      <section id="a11y" data-section>
+        <div class="sec-head">
+          <span class="num">{num.a11y}</span>
+          <div>
+            <h2>Accessibility</h2>
+            <p>Contrast is computed, not eyeballed, using the WCAG 2 ratio in <code>src/lib/color.ts</code>.</p>
+          </div>
+        </div>
+
+        <div class="a11y-table" role="table" aria-label="Token contrast in light and dark">
+          <div class="a11y-head" role="row">
+            <span role="columnheader">Pair</span>
+            <span role="columnheader">Light</span>
+            <span role="columnheader">Dark</span>
+          </div>
+          {
+            pairRows.map((p) => (
+              <div class="a11y-row" role="row">
+                <span role="cell" class="pair-name">
+                  <span class="pair-dot" style={`--f:var(--${p.fg});--b:var(--${p.bg})`}>
+                    Aa
+                  </span>
+                  --{p.fg} on --{p.bg}
+                </span>
+                <span role="cell">
+                  <b>{p.light}</b> <em class:list={{ fail: !p.lightLevel }}>{p.lightLevel ?? 'Fail'}</em>
+                </span>
+                <span role="cell">
+                  <b>{p.dark}</b> <em class:list={{ fail: !p.darkLevel }}>{p.darkLevel ?? 'Fail'}</em>
+                </span>
+              </div>
+            ))
+          }
+        </div>
+
+        <div class="a11y-cards">
+          <article>
+            <h3>Levels</h3>
+            <p><b>AAA</b> 7:1 · <b>AA</b> 4.5:1 · <b>AA large</b> 3:1. Palette pages list every pair with its level.</p>
+          </article>
+          <article>
+            <h3>Focus</h3>
+            <p>A 2px ink outline offset 2px. On a chip it moves inside and takes the chip's own ink.</p>
+            <button type="button" class="btn-ghost focus-demo">Focused</button>
+          </article>
+          <article>
+            <h3>Motion</h3>
+            <p>Under <code>prefers-reduced-motion</code>, every animation and transition runs in 0.01ms.</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- Do and don't ------------------------------------------------------>
+      <section id="dos" data-section>
+        <div class="sec-head">
+          <span class="num">{num.dos}</span>
+          <div>
+            <h2>Do and don't</h2>
+            <p>The mistakes that make a palette site feel off, side by side with the rule.</p>
+          </div>
+        </div>
+
+        <div class="dos">
+          <figure class="do">
+            <div class="dd-stage">
+              <span class="dd-chip" style={`background:${lightChip};color:${goodInk}`}>
+                <b>Aa</b><span class="hex">{goodRatio}</span>
+              </span>
+            </div>
+            <figcaption><b>Do</b> Let <code>inkOn()</code> pick the text color.</figcaption>
+          </figure>
+          <figure class="dont">
+            <div class="dd-stage">
+              <span class="dd-chip" style={`background:${lightChip};color:${badInk}`}>
+                <b>Aa</b><span class="hex">{badRatio}</span>
+              </span>
+            </div>
+            <figcaption><b>Don't</b> Set white or black text by habit.</figcaption>
+          </figure>
+
+          <figure class="do">
+            <div class="dd-stage">
+              <div class="dd-bar">
+                <span class="tag" aria-pressed="true">warm</span>
+                <span class="tag">muted</span>
+                <span class="tag">earthy</span>
+              </div>
+            </div>
+            <figcaption><b>Do</b> Keep chrome gray. Pressed is ink on raised.</figcaption>
+          </figure>
+          <figure class="dont">
+            <div class="dd-stage">
+              <div class="dd-bar">
+                <span class="tag" style={`background:${tintAccent};border-color:${tintAccent};color:${inkOn(tintAccent)}`}>warm</span>
+                <span class="tag">muted</span>
+                <span class="tag">earthy</span>
+              </div>
+            </div>
+            <figcaption><b>Don't</b> Tint controls with a palette color. It reads as part of the palette.</figcaption>
+          </figure>
+
+          <figure class="do">
+            <div class="dd-stage">
+              <div class="dd-radii">
+                <span class="r6"></span><span class="r-pill">Tag</span>
+              </div>
+            </div>
+            <figcaption><b>Do</b> 6px for surfaces, pills for toggles.</figcaption>
+          </figure>
+          <figure class="dont">
+            <div class="dd-stage">
+              <div class="dd-radii">
+                <span class="r6" style="border-radius:18px"></span><span class="r-pill" style="border-radius:3px">Tag</span>
+              </div>
+            </div>
+            <figcaption><b>Don't</b> Invent new radii per component.</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <!-- Tokens ------------------------------------------------------------>
+      <section id="tokens" data-section>
+        <div class="sec-head">
+          <span class="num">{num.tokens}</span>
+          <div>
+            <h2>Tokens</h2>
+            <p>The <code>:root</code> block and its dark override from <code>src/styles/global.css</code>, as shipped.</p>
+          </div>
+        </div>
+
+        <div class="code">
+          <pre><code>{rootRaw}</code></pre>
+          <button type="button" class="copy" data-copy={rootRaw} data-label="the tokens">Copy</button>
+        </div>
+      </section>
+
+      <nav class="pager" aria-label="More from Cores">
+        <a href={`${base}/`}><small>Back to</small>The collection</a>
+        <a href={`${base}/studio/`} class="next"><small>Next</small>Brand studio</a>
+      </nav>
+    </main>
+  </div>
+</Base>
+
+<script>
+  // Scroll-spy: mark the rail link for the section nearest the top.
+  const links = new Map(
+    [...document.querySelectorAll<HTMLAnchorElement>('[data-spy]')].map((a) => [a.dataset.spy!, a]),
+  );
+  const sections = [...document.querySelectorAll<HTMLElement>('[data-section]')];
+  const visible = new Set<string>();
+  const mark = () => {
+    const current = sections.find((s) => visible.has(s.id)) ?? sections[0];
+    for (const [id, a] of links) {
+      if (id === current.id) a.setAttribute('aria-current', 'true');
+      else a.removeAttribute('aria-current');
+    }
+    // Keep the active item in view on the mobile strip.
+    const active = links.get(current.id);
+    const strip = active?.closest<HTMLElement>('.toc');
+    if (active && strip && strip.scrollWidth > strip.clientWidth) {
+      const left = strip.scrollLeft + active.getBoundingClientRect().left - strip.getBoundingClientRect().left;
+      strip.scrollLeft = left - 8;
+    }
+  };
+  const io = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) {
+        if (e.isIntersecting) visible.add(e.target.id);
+        else visible.delete(e.target.id);
+      }
+      mark();
+    },
+    { rootMargin: '-15% 0px -70% 0px' },
+  );
+  sections.forEach((s) => io.observe(s));
+
+  // Demo toggles behave like the real ones.
+  for (const group of document.querySelectorAll('[data-toggle-group]')) {
+    group.addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest('button');
+      if (b) b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+    });
+  }
+  for (const list of document.querySelectorAll('[role=tablist]')) {
+    list.addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest('[role=tab]');
+      if (!b) return;
+      list.querySelectorAll('[role=tab]').forEach((t) => t.setAttribute('aria-selected', String(t === b)));
+    });
+  }
+</script>
+
+<style>
+  .shell {
+    display: grid;
+    grid-template-columns: 15.5rem minmax(0, 1fr);
+    min-height: 100vh;
+  }
+
+  /* Rail ------------------------------------------------------------------ */
+  .rail {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+    padding: 1.5rem 1.25rem 1.25rem;
+    border-right: 1px solid var(--rule);
+    overflow-y: auto;
+  }
+
+  .home {
+    display: grid;
+    text-decoration: none;
+    line-height: 1.2;
+  }
+
+  .home b {
+    font-size: var(--step-1);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+  }
+
+  .home span {
+    font-size: var(--step--1);
+    color: var(--muted);
+  }
+
+  .toc {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .group-label {
+    margin-bottom: 0.4rem;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .toc ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .toc a {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.3rem 0;
+    font-size: var(--step--1);
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 120ms ease;
+  }
+
+  .toc a:hover {
+    color: var(--ink);
+  }
+
+  .toc a[aria-current] {
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  .toc a[aria-current]::after {
+    content: '';
+    margin-left: auto;
+    width: 1rem;
+    height: 1px;
+    background: var(--ink);
+  }
+
+  .num {
+    font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+    font-size: 0.6875rem;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .toc a[aria-current] .num {
+    color: var(--ink);
+  }
+
+  .cta {
+    margin-top: auto;
+    padding: 0.6rem 1rem;
+    border-radius: 6px;
+    background: var(--ink);
+    color: var(--ground);
+    font-size: var(--step--1);
+    font-weight: 500;
+    text-align: center;
+    text-decoration: none;
+  }
+
+  /* Document -------------------------------------------------------------- */
+  .doc {
+    min-width: 0;
+    max-width: 68rem;
+    padding: clamp(2rem, 5vw, 4rem) var(--gutter) 3rem;
+  }
+
+  .doc section,
+  .hero {
+    scroll-margin-top: 1.5rem;
+  }
+
+  .doc section {
+    padding-top: clamp(4rem, 9vw, 7rem);
+  }
+
+  .doc code {
+    font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+    font-size: 0.875em;
+  }
+
+  .note,
+  .sub-lede {
+    max-width: 60ch;
+    color: var(--muted);
+    font-size: var(--step--1);
+  }
+
+  .sub-lede {
+    margin: -0.5rem 0 1.25rem;
+  }
+
+  .sub-lede a {
+    color: var(--ink);
+  }
+
+  /* Hero */
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem 0.25rem 0.5rem;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    background: var(--raised);
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .eyebrow i {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: conic-gradient(#e4572e, #f3a712, #a8c256, #29bf9f, #3f88c5, #8e5ea2, #e4572e);
+  }
+
+  .hero h1 {
+    margin-top: 1.25rem;
+    max-width: 13ch;
+    font-size: clamp(2.5rem, 7vw, 5.5rem);
+    font-weight: 800;
+    letter-spacing: -0.045em;
+    line-height: 0.92;
+  }
+
+  .lede {
+    margin-top: 1.5rem;
+    max-width: 56ch;
+    color: var(--muted);
+    font-size: var(--step-1);
+    line-height: 1.4;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.25rem;
+    margin: 2.5rem 0 0;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  .stats dt {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .stats dd {
+    margin: 0.2rem 0 0;
+    font-size: var(--step--1);
+    font-weight: 500;
+  }
+
+  .principles {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 3rem 0 0;
+    padding: 0;
+    list-style: none;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .principles li {
+    display: grid;
+    align-content: start;
+    gap: 0.5rem;
+    padding: 1.5rem;
+    background: var(--raised);
+  }
+
+  .principles li + li {
+    border-left: 1px solid var(--rule);
+  }
+
+  .principles h3 {
+    margin-top: 1.5rem;
+    font-size: var(--step-1);
+    font-weight: 700;
+  }
+
+  .principles p {
+    color: var(--muted);
+    font-size: var(--step--1);
+  }
+
+  /* Section header: number in the margin, title and lede beside it */
+  .sec-head {
+    display: grid;
+    grid-template-columns: 3.5rem minmax(0, 1fr);
+    gap: 1rem;
+    align-items: baseline;
+    margin-bottom: 2.5rem;
+  }
+
+  .sec-head h2 {
+    font-size: clamp(var(--step-3), 4vw, 2.75rem);
+    letter-spacing: -0.03em;
+  }
+
+  .sec-head p {
+    margin-top: 0.75rem;
+    max-width: 60ch;
+    color: var(--muted);
+  }
+
+  .sub {
+    margin: 3rem 0 1.25rem;
+    font-size: var(--step-0);
+    font-weight: 700;
+    letter-spacing: -0.005em;
+  }
+
+  .code-chip {
+    justify-self: start;
+    padding: 0.15rem 0.5rem;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    background: var(--ground);
+    font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+    font-size: 0.75rem;
+    cursor: copy;
+  }
+
+  .code-chip.static {
+    cursor: default;
+  }
+
+  button.code-chip:hover {
+    border-color: var(--muted);
+  }
+
+  /* Logo */
+  .logo-stage {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: end;
+    gap: 2rem;
+    padding: 2rem;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    background: var(--raised);
+  }
+
+  .logo-stage :global(.logo-live) {
+    width: clamp(8rem, 18vw, 12rem);
+  }
+
+  .logo-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .logo-grid figure {
+    margin: 0;
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .logo-grid svg {
+    width: 100%;
+    height: auto;
+  }
+
+  .logo-grid figcaption {
+    display: grid;
+    gap: 0.4rem;
+    font-size: var(--step--1);
+  }
+
+  .logo-grid figcaption a {
+    text-underline-offset: 3px;
+  }
+
+  .ramp {
+    display: flex;
+    height: 0.5rem;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .ramp i {
+    flex: 1;
+    background: var(--c);
+  }
+
+  .rules {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    margin: 2rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .rules li,
+  .facts-list li {
+    font-size: var(--step--1);
+    color: var(--muted);
+  }
+
+  .rules b,
+  .facts-list b {
+    display: block;
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  .facts-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    gap: 1rem 1.5rem;
+    margin: 1.5rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Color tokens */
+  .tokens {
+    border-top: 1px solid var(--rule);
+  }
+
+  .token {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    gap: 1rem 2rem;
+    align-items: center;
+    padding-block: 1.1rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .token-name {
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .token-name p {
+    font-size: var(--step--1);
+    color: var(--muted);
+  }
+
+  .modes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  .mode {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.35rem;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: none;
+    text-align: left;
+    cursor: copy;
+  }
+
+  .mode:hover {
+    border-color: var(--rule);
+  }
+
+  .mode i {
+    flex: none;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 6px;
+    background: var(--c);
+    box-shadow: inset 0 0 0 1px rgb(128 128 128 / 0.3);
+  }
+
+  .mode > span {
+    display: grid;
+    line-height: 1.3;
+    font-size: var(--step--1);
+  }
+
+  .mode small {
+    font-size: 0.6875rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  /* Hue families */
+  .hues-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+    gap: 0.75rem;
+  }
+
+  .hue-card {
+    display: grid;
+    padding: 0;
+    border: 0;
+    background: none;
+    text-align: left;
+    cursor: copy;
+  }
+
+  .hue-fill {
+    display: flex;
+    align-items: flex-end;
+    height: 5.5rem;
+    padding: 0.5rem 0.6rem;
+    border-radius: 6px;
+    background: var(--c);
+    color: var(--on);
+    font-size: 0.75rem;
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.06);
+  }
+
+  .hue-fill .hex {
+    opacity: 0;
+    transition: opacity 120ms ease;
+  }
+
+  .hue-card:hover .hex,
+  .hue-card:focus-visible .hex {
+    opacity: 0.85;
+  }
+
+  .hue-meta {
+    display: grid;
+    padding-top: 0.5rem;
+    font-size: var(--step--1);
+    line-height: 1.35;
+  }
+
+  .hue-meta b {
+    font-weight: 500;
+    text-transform: capitalize;
+  }
+
+  .hue-meta span {
+    color: var(--muted);
+    font-size: 0.75rem;
+  }
+
+  /* Roles */
+  .roles {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .role-set {
+    display: grid;
+    align-content: start;
+    gap: 0.25rem;
+    padding: 1.25rem;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+  }
+
+  .role-title {
+    margin-bottom: 0.5rem;
+    font-size: var(--step--1);
+    font-weight: 500;
+  }
+
+  .role-title code {
+    margin-left: 0.4rem;
+    color: var(--muted);
+    font-weight: 400;
+  }
+
+  .role {
+    display: grid;
+    grid-template-columns: 1.75rem 5.5rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.4rem 0;
+    border: 0;
+    border-top: 1px solid var(--rule);
+    background: none;
+    text-align: left;
+    font-size: var(--step--1);
+    cursor: copy;
+  }
+
+  .role i {
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 4px;
+    background: var(--c);
+    box-shadow: inset 0 0 0 1px rgb(128 128 128 / 0.3);
+  }
+
+  .role-name {
+    font-weight: 500;
+  }
+
+  .role-why {
+    color: var(--muted);
+    font-size: 0.75rem;
+  }
+
+  .role-strip {
+    display: flex;
+    height: 6rem;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px var(--rule);
+  }
+
+  .role-strip button {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 0.45rem;
+    border: 0;
+    background: var(--c);
+    color: var(--on);
+    font-size: 0.6875rem;
+    text-align: left;
+    cursor: copy;
+  }
+
+  .role-strip .hex {
+    opacity: 0.75;
+    font-size: 0.625rem;
+  }
+
+  .mini {
+    display: grid;
+    justify-items: start;
+    gap: 0.3rem;
+    margin-top: 0.75rem;
+    padding: 1.1rem;
+    border-radius: 6px;
+    background: var(--p);
+    color: var(--t);
+  }
+
+  .mini-kicker {
+    font-size: 0.6875rem;
+    color: var(--a);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .mini b {
+    font-size: var(--step-1);
+    letter-spacing: -0.02em;
+  }
+
+  .mini-btn {
+    margin-top: 0.4rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    background: var(--a);
+    color: var(--p);
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  /* Type */
+  .specimen {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 2.5rem;
+    padding: 2rem;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    background: var(--raised);
+  }
+
+  .display {
+    font-size: clamp(5rem, 14vw, 9rem);
+    font-weight: 800;
+    letter-spacing: -0.06em;
+    line-height: 0.8;
+  }
+
+  .family {
+    font-size: var(--step-2);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .weights {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1.25rem;
+    margin-top: 0.5rem;
+  }
+
+  .mono-line {
+    margin-top: 1rem;
+    font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .type-row {
+    display: grid;
+    grid-template-columns: 14rem minmax(0, 1fr);
+    gap: 1rem 2rem;
+    align-items: baseline;
+    padding-block: 1rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  .type-row p {
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+  }
+
+  .type-meta {
+    display: grid;
+    gap: 0.3rem;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .type-meta b {
+    color: var(--ink);
+    font-size: var(--step--1);
+    font-weight: 500;
+  }
+
+  .t-display {
+    font-size: clamp(2.5rem, 7vw, 5.5rem);
+    font-weight: 800;
+    letter-spacing: -0.045em !important;
+    line-height: 0.92 !important;
+  }
+
+  /* Layout */
+  .layout-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .spec {
+    display: grid;
+    align-content: start;
+    gap: 0.75rem;
+    padding: 1.25rem;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+  }
+
+  .spec > p:last-child {
+    font-size: var(--step--1);
+    color: var(--muted);
+  }
+
+  .spec-value {
+    font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+    font-size: 0.75rem;
+  }
+
+  .gutter-demo,
+  .max-demo,
+  .grid-demo {
+    height: 4.5rem;
+    border-radius: 4px;
+    background: var(--raised);
+    box-shadow: inset 0 0 0 1px var(--rule);
+  }
+
+  .gutter-demo {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .gutter-demo span {
+    width: 14%;
+    background: repeating-linear-gradient(135deg, var(--rule) 0 1px, transparent 1px 6px);
+  }
+
+  .max-demo {
+    display: flex;
+    justify-content: center;
+    padding: 0.6rem;
+  }
+
+  .max-demo span {
+    width: 78%;
+    border: 1px dashed var(--muted);
+    border-radius: 2px;
+  }
+
+  .grid-demo {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.4rem;
+    padding: 0.6rem;
+  }
+
+  .grid-demo span {
+    border-radius: 3px;
+    background: var(--rule);
+  }
+
+  .radii {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .radius {
+    display: grid;
+    gap: 0.4rem;
+    font-size: var(--step--1);
+  }
+
+  .radius span:last-child {
+    color: var(--muted);
+    font-size: 0.75rem;
+  }
+
+  .radius-box {
+    width: 4.5rem;
+    height: 4.5rem;
+    margin-bottom: 0.4rem;
+    border: 1px solid var(--ink);
+    border-right-color: transparent;
+    border-bottom-color: transparent;
+    background: var(--raised);
+  }
+
+  /* Motion */
+  .motion-list {
+    border-top: 1px solid var(--rule);
+  }
+
+  .motion {
+    display: grid;
+    grid-template-columns: 15rem minmax(6rem, 1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 1rem 2rem;
+    width: 100%;
+    padding: 1.1rem 0;
+    border: 0;
+    border-bottom: 1px solid var(--rule);
+    background: none;
+    text-align: left;
+    cursor: copy;
+  }
+
+  .motion-name {
+    display: grid;
+    gap: 0.15rem;
+  }
+
+  .motion-name .hex {
+    font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+    font-size: 0.6875rem;
+    color: var(--muted);
+  }
+
+  .track {
+    position: relative;
+    height: 1.5rem;
+    border-radius: 999px;
+    background: var(--raised);
+    box-shadow: inset 0 0 0 1px var(--rule);
+  }
+
+  .dot {
+    position: absolute;
+    top: 0.25rem;
+    left: 0.25rem;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    background: var(--ink);
+    transition: left var(--dur) var(--ease);
+  }
+
+  .motion:hover .dot,
+  .motion:focus-visible .dot {
+    left: calc(100% - 1.25rem);
+  }
+
+  .motion-use {
+    font-size: var(--step--1);
+    color: var(--muted);
+  }
+
+  /* Previews */
+  .preview {
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .preview-bar {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.55rem 0.9rem;
+    border-bottom: 1px solid var(--rule);
+    background: var(--raised);
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .preview-bar span:first-child {
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  .preview-bar span + span {
+    font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+    font-size: 0.6875rem;
+  }
+
+  .preview-body {
+    padding: 1.5rem;
+  }
+
+  .preview-body.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+    gap: 1.5rem;
+  }
+
+  .preview-body.center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    min-height: 8rem;
+  }
+
+  .preview-body.col {
+    flex-direction: column;
+  }
+
+  .wrap-row {
+    flex-wrap: wrap;
+  }
+
+  .chip-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    min-height: 10rem;
+  }
+
+  .stage-chip {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 3.25rem;
+    height: 3.25rem;
+    padding: 0.4rem 0.45rem;
+    border-radius: 4px;
+    background: var(--c);
+    color: var(--on);
+    font-size: 0.75rem;
+    line-height: 1.2;
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.06);
+  }
+
+  .stage-chip.open {
+    width: 9.1rem;
+    height: 9.1rem;
+    font-size: 0.8125rem;
+  }
+
+  .stage-chip .hex {
+    opacity: 0.7;
+    font-size: 0.85em;
+  }
+
+  .comp-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  /* Controls, mirroring the home and palette pages */
+  .btn {
+    padding: 0.55rem 1rem;
+    border: 1px solid var(--ink);
+    border-radius: 6px;
+    background: var(--ink);
+    color: var(--ground);
+    cursor: pointer;
+  }
+
+  .btn-pill {
+    padding: 0.35rem 0.9rem;
+    border: 0;
+    border-radius: 999px;
+    background: var(--ink);
+    color: var(--ground);
+    font-size: var(--step--1);
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .btn-ghost {
+    justify-self: start;
+    padding: 0.45rem 0.9rem;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    background: var(--raised);
+    font-size: var(--step--1);
+  }
+
+  .focus-demo {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  .field {
+    width: min(100%, 22rem);
+  }
+
+  .field input {
+    width: 100%;
+    padding: 0.6rem 0.85rem;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    background: var(--raised);
+  }
+
+  .field input::placeholder {
+    color: var(--muted);
+  }
+
+  .hue-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.65rem 0.35rem 0.4rem;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: none;
+    font-size: var(--step--1);
+    text-transform: capitalize;
+    cursor: pointer;
+  }
+
+  .hue-pill i {
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    background: var(--c);
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.12);
+  }
+
+  .hue-pill:hover {
+    border-color: var(--rule);
+  }
+
+  .tag {
+    padding: 0.25rem 0.7rem;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    background: none;
+    font-size: var(--step--1);
+    cursor: pointer;
+  }
+
+  .tag:hover {
+    border-color: var(--muted);
+  }
+
+  .hue-pill[aria-pressed='true'],
+  .tag[aria-pressed='true'] {
+    border-color: var(--ink);
+    background: var(--raised);
+  }
+
+  .tabs {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  .tabs button {
+    padding: 0.4rem 0.8rem;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: none;
+    font-size: var(--step--1);
+    cursor: pointer;
+  }
+
+  .tabs button[aria-selected='true'] {
+    border-color: var(--ink);
+    background: var(--raised);
+  }
+
+  .sort {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: var(--step--1);
+    color: var(--muted);
+  }
+
+  .sort select {
+    padding: 0.45rem 0.6rem;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    background: var(--raised);
+    color: var(--ink);
+  }
+
+  .toast-static {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 1rem 0.6rem 0.6rem;
+    border-radius: 999px;
+    background: var(--ink);
+    color: var(--ground);
+    font-size: var(--step--1);
+    font-weight: 500;
+  }
+
+  .toast-static i {
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.25);
+  }
+
+  /* Accessibility */
+  .a11y-table {
+    border-top: 1px solid var(--rule);
+    font-size: var(--step--1);
+  }
+
+  .a11y-head,
+  .a11y-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) 1fr 1fr;
+    gap: 1rem;
+    align-items: center;
+    padding-block: 0.7rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .a11y-head {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .pair-name {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+    font-size: 0.75rem;
+  }
+
+  .pair-dot {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 6px;
+    background: var(--b);
+    color: var(--f);
+    font-family: var(--font);
+    font-weight: 700;
+    box-shadow: inset 0 0 0 1px var(--rule);
+  }
+
+  .a11y-row b {
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .a11y-row em {
+    margin-left: 0.4rem;
+    padding: 0.05rem 0.45rem;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    font-style: normal;
+  }
+
+  .a11y-row em.fail {
+    color: var(--muted);
+    border-style: dashed;
+  }
+
+  .a11y-cards {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .a11y-cards article {
+    display: grid;
+    align-content: start;
+    gap: 0.6rem;
+    padding: 1.25rem;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+  }
+
+  .a11y-cards h3 {
+    font-size: var(--step-0);
+  }
+
+  .a11y-cards p {
+    font-size: var(--step--1);
+    color: var(--muted);
+  }
+
+  /* Do and don't */
+  .dos {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .dos figure {
+    margin: 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .dos figure:nth-child(odd) {
+    border-right: 1px solid var(--rule);
+  }
+
+  .dos figure:nth-last-child(-n + 2) {
+    border-bottom: 0;
+  }
+
+  .dd-stage {
+    display: grid;
+    place-items: center;
+    min-height: 10rem;
+    padding: 1.5rem;
+  }
+
+  .dos figcaption {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--rule);
+    background: var(--raised);
+    font-size: var(--step--1);
+    color: var(--muted);
+  }
+
+  .dos figcaption b {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex: none;
+    color: var(--ink);
+  }
+
+  .dos figcaption b::before {
+    content: '';
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 2px;
+  }
+
+  .do figcaption b::before {
+    background: #2f9e5b;
+  }
+
+  .dont figcaption b::before {
+    background: #d6453d;
+  }
+
+  .dd-chip {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 7rem;
+    height: 7rem;
+    padding: 0.6rem 0.7rem;
+    border-radius: 4px;
+  }
+
+  .dd-chip b {
+    font-size: var(--step-2);
+    letter-spacing: -0.02em;
+  }
+
+  .dd-chip .hex {
+    font-size: 0.75rem;
+  }
+
+  .dd-bar {
+    display: flex;
+    gap: 0.35rem;
+  }
+
+  .dd-bar .tag {
+    cursor: default;
+  }
+
+  .dd-radii {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .dd-radii .r6 {
+    width: 5rem;
+    height: 3.5rem;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    background: var(--raised);
+  }
+
+  .dd-radii .r-pill {
+    padding: 0.25rem 0.7rem;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    font-size: var(--step--1);
+  }
+
+  /* Tokens */
+  .code {
+    position: relative;
+  }
+
+  pre {
+    margin: 0;
+    padding: 1.25rem;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    background: var(--raised);
+    overflow-x: auto;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+  }
+
+  .copy {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    padding: 0.35rem 0.9rem;
+    border: 0;
+    border-radius: 999px;
+    background: var(--ink);
+    color: var(--ground);
+    font-size: var(--step--1);
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  /* Pager */
+  .pager {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 6rem;
+  }
+
+  .pager a {
+    display: grid;
+    gap: 0.2rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  .pager a:hover {
+    border-color: var(--muted);
+  }
+
+  .pager small {
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--muted);
+  }
+
+  .pager .next {
+    text-align: right;
+  }
+
+  /* Responsive ------------------------------------------------------------ */
+  @media (max-width: 1100px) {
+    .logo-grid,
+    .radii {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .roles,
+    .comp-grid {
+      grid-template-columns: 1fr;
+    }
+    .motion {
+      grid-template-columns: minmax(0, 1fr) minmax(6rem, 1fr);
+    }
+    .motion-use {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 900px) {
+    .shell {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    /* The rail becomes a sticky strip of section links. */
+    .rail {
+      z-index: 10;
+      height: auto;
+      flex-direction: row;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.6rem var(--gutter);
+      border-right: 0;
+      border-bottom: 1px solid var(--rule);
+      background: color-mix(in oklab, var(--ground) 92%, transparent);
+      backdrop-filter: blur(12px);
+      overflow: visible;
+    }
+
+    .home span,
+    .group-label,
+    .cta {
+      display: none;
+    }
+
+    .toc {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      gap: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+      mask-image: linear-gradient(90deg, #000 85%, transparent);
+    }
+
+    .toc ol {
+      display: flex;
+    }
+
+    .toc a {
+      gap: 0.4rem;
+      padding: 0.35rem 0.6rem;
+      white-space: nowrap;
+    }
+
+    .toc a[aria-current]::after {
+      display: none;
+    }
+
+    .doc section,
+    .hero {
+      scroll-margin-top: 4rem;
+    }
+
+    .stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .principles,
+    .rules,
+    .layout-grid,
+    .a11y-cards {
+      grid-template-columns: 1fr;
+    }
+
+    .principles li + li {
+      border-left: 0;
+      border-top: 1px solid var(--rule);
+    }
+
+    .principles h3 {
+      margin-top: 0.75rem;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .sec-head {
+      grid-template-columns: 1fr;
+      gap: 0.25rem;
+    }
+
+    .token,
+    .type-row {
+      grid-template-columns: 1fr;
+    }
+
+    .logo-stage,
+    .specimen {
+      grid-template-columns: 1fr;
+      padding: 1.25rem;
+    }
+
+    .a11y-head,
+    .a11y-row {
+      grid-template-columns: minmax(0, 1.4fr) 1fr 1fr;
+      gap: 0.5rem;
+    }
+
+    .a11y-row em {
+      display: block;
+      width: fit-content;
+      margin: 0.2rem 0 0;
+    }
+
+    .pair-dot {
+      display: none;
+    }
+
+    .dos {
+      grid-template-columns: 1fr;
+    }
+
+    .dos figure:nth-child(odd) {
+      border-right: 0;
+    }
+
+    .dos figure:nth-last-child(2) {
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .role {
+      grid-template-columns: 1.75rem minmax(0, 1fr) auto;
+    }
+
+    .role-why {
+      display: none;
+    }
+
+    .chip-row {
+      overflow-x: auto;
+    }
+
+    .stage-chip {
+      flex: none;
+    }
+  }
+</style>

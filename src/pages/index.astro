@@ -58,6 +58,7 @@ const hasBrand = infos.some((i) => i.palette.data.origin === 'brand');
       <a href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/today/`}>Color of the day</a>
       <a href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/brand/`}>Brand lab</a>
       <a href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/studio/`}>Brand studio</a>
+      <a href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/system/`}>Design system</a>
     </nav>
   </header>
 
@@ -363,10 +364,12 @@ const hasBrand = infos.some((i) => i.palette.data.origin === 'brand');
 
   .links {
     display: flex;
-    gap: 1.25rem;
+    flex-wrap: wrap;
+    gap: 0.35rem 1.25rem;
   }
 
   .links a {
+    white-space: nowrap;
     font-weight: 500;
     text-underline-offset: 3px;
   }
